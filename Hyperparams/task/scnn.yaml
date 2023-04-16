@@ -1,0 +1,8 @@
+defaults:
+  - base
+  - _self_
+
+Eyes: XRD.CNN
+Predictor: XRD.Predictor
+
+experiment: SCNN

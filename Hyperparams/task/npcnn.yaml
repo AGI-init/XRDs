@@ -1,0 +1,8 @@
+defaults:
+  - base
+  - _self_
+
+Eyes: XRD.NoPoolCNN
+Predictor: XRD.Predictor
+
+experiment: NPCNN

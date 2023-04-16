@@ -1,0 +1,7 @@
+defaults:
+  - base
+  - _self_
+
+Predictor: XRD.MLP
+
+experiment: MLP
