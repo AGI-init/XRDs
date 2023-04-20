@@ -106,9 +106,11 @@ class MLP(nn.Module):
 
 
 class XRD(Dataset):
-    def __init__(self, icsd=True, open_access=True, rruff=True, soup=True, train=True, num_classes=7, seed=0, **kwargs):
+    def __init__(self, icsd=True, open_access=True, rruff=True, soup=True, train=True, num_classes=7, seed=0,
+                 roots=None, train_eval_splits=None, **kwargs):
 
-        roots, train_eval_splits = data_paths(icsd, open_access, rruff, soup)
+        if roots is None and train_eval_splits is None:
+            roots, train_eval_splits = data_paths(icsd, open_access, rruff, soup)
 
         self.indices = []
         self.features = {}
