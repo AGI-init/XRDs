@@ -17,6 +17,7 @@ from Data.Generated.Generate import generate
 Import UnifiedML and features
 """
 from UnifiedML.Run import main  # For launching UnifiedML
+print('Debugging')
 
 
 class NoPoolCNN(nn.Module):
