@@ -16,9 +16,6 @@ from Data.Generated.Generate import generate
 """
 Import UnifiedML and features
 """
-import sys
-sys.path.append("./UnifiedML")  # Imports UnifiedML expected syntax and paths
-sys.argv.extend(['-cd', 'Hyperparams'])  # Adds this project's Hyperparams directory to Hydra's .yaml search path
 from UnifiedML.Run import main  # For launching UnifiedML
 
 
@@ -162,9 +159,11 @@ def data_paths(icsd, open_access, rruff, soup):
     roots = []
     train_eval_splits = []
 
+    path = os.path.dirname(__file__)
+
     if rruff:
-        if os.path.exists('Data/Generated/XRDs_RRUFF/'):
-            roots.append('./Data/Generated/XRDs_RRUFF/')
+        if os.path.exists(path + '/Data/Generated/XRDs_RRUFF/'):
+            roots.append(path + '/Data/Generated/XRDs_RRUFF/')
             train_eval_splits += [0.5 if soup else 0]  # Split 50% of experimental RRUFF data just for training
         else:
             rruff = False
@@ -172,20 +171,20 @@ def data_paths(icsd, open_access, rruff, soup):
                   '10% held-out portion of synthetic data.')
 
     if icsd:
-        if os.path.exists('Data/Generated/CIFs_ICSD/'):
-            generate('Data/Generated/CIFs_ICSD/', 'Data/Generated/XRDs_ICSD/')
-            roots.append('./Data/Generated/XRDs_ICSD/')
+        if os.path.exists(path + '/Data/Generated/CIFs_ICSD/'):
+            generate(path + '/Data/Generated/CIFs_ICSD/', path + '/Data/Generated/XRDs_ICSD/')
+            roots.append(path + '/Data/Generated/XRDs_ICSD/')
             train_eval_splits += [1 if rruff else 0.9]  # Train on all synthetic data if evaluating on RRUFF
         else:
             icsd = False
             print('Could not find ICSD CIF files. Using open-access CIFs instead.')
 
     if open_access or not icsd:
-        if not os.path.exists('Data/Generated/XRDs_open_access/'):
-            if not os.path.exists('Data/Generated/CIFs_open_access/'):
-                download('Data/Generated/', 'CIFs_open_access/')
-            generate('Data/Generated/CIFs_open_access/', 'Data/Generated/XRDs_open_access/')
-        roots.append('./Data/Generated/XRDs_open_access/')
+        if not os.path.exists(path + '/Data/Generated/XRDs_open_access/'):
+            if not os.path.exists(path + '/Data/Generated/CIFs_open_access/'):
+                download(path + '/Data/Generated/', 'CIFs_open_access/')
+            generate(path + '/Data/Generated/CIFs_open_access/', path + '/Data/Generated/XRDs_open_access/')
+        roots.append(path + '/Data/Generated/XRDs_open_access/')
         train_eval_splits += [1 if rruff else 0.9]  # Train on all synthetic data if evaluating on RRUFF
 
     return roots, train_eval_splits
