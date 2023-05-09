@@ -13,7 +13,7 @@ Paper:
 @article{Crystals,
 title   = {Automated Classification of Big X-ray Data Using Deep Learning Models},
 author  = {Jerardo Salgado; Sam Lerman; Zhaotong Du; Chenliang Xu; and Niaz Abdolrahim},
-journal = {Under Review, Nature Communications},
+journal = {Under Review at npj Computational Materials},
 year    = {2023}
 }
 ```
@@ -129,7 +129,7 @@ If you find this work useful, be sure to cite us:
 @article{Crystals,
 title   = {Automated Classification of Big X-ray Data Using Deep Learning Models},
 author  = {Jerardo Salgado; Sam Lerman; Zhaotong Du; Chenliang Xu; and Niaz Abdolrahim},
-journal = {Under Review, Nature Communications},
+journal = {Under Review at npj Computational Materials},
 year    = {2023}
 }
 ```
