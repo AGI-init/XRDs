@@ -10,13 +10,10 @@ import torch
 from torch import nn
 from torch.utils.data import Dataset
 
+import UnifiedML
+
 from Data.Generated.Download import download
 from Data.Generated.Generate import generate
-
-"""
-Import UnifiedML and features
-"""
-from UnifiedML.Run import main  # For launching UnifiedML
 
 
 class NoPoolCNN(nn.Module):
@@ -191,4 +188,4 @@ def data_paths(icsd, open_access, rruff, soup):
 
 
 if __name__ == '__main__':
-    main()
+    UnifiedML.launch(task='NPCNN')
