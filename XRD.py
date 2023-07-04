@@ -7,7 +7,6 @@ import random
 import numpy as np
 
 import torch
-from ML.World.Dataset import Lock
 from torch import nn
 from torch.utils.data import Dataset
 
@@ -15,6 +14,7 @@ from Data.Generated.Download import download
 from Data.Generated.Generate import generate
 
 import ML
+from ML.World.Dataset import Lock
 
 
 class NoPoolCNN(nn.Module):
@@ -107,7 +107,7 @@ class XRD(Dataset):
         self.num_classes = num_classes
 
         if roots is None and train_eval_splits is None:
-            with Lock('XRD_data'):
+            with Lock('XRD_data'):  # System-wide lock
                 roots, train_eval_splits = data_paths(icsd, open_access, rruff, soup)
 
         self.indices = []
@@ -214,7 +214,7 @@ class MemoryEfficientXRD(Dataset):
         self.num_classes = num_classes
 
         if roots is None and train_eval_splits is None:
-            with Lock('XRD_data'):
+            with Lock('XRD_data'):  # System-wide lock
                 roots, train_eval_splits = data_paths(icsd, open_access, rruff, soup)
 
         self.indices = []
