@@ -211,7 +211,7 @@ def generate(in_dir='./CIFs_open_access/', out_dir='./XRDs_open_access/'):
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
 
-    # Format processed data for training  TODO Do this in process_cif
+    # Format processed data for training
     for name in sorted(preprocessed_files):
         with open(name) as f:
             xrd = f.readlines()
