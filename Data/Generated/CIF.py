@@ -462,6 +462,8 @@ def process_cif(cif_dir, cif_file, out_dir, hkl_info, x_step=0.01):
     # CAL PEAK
     # Calculate peak positions and peak intensities.
 
+    hkl_info = hkl_info.numpy()
+
     # Since we have hkl_info inputed, we use general equations to calculate distance between hkl planes.
     hkl_h = hkl_info[:, 0]
     hkl_k = hkl_info[:, 1]

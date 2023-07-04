@@ -166,6 +166,11 @@ def hkl(hkl_max=10):
 generated_path = str(pathlib.Path(__file__).parent.resolve())
 
 
+# tqdm starmap compatibility https://stackoverflow.com/a/67845088/22002059
+def star(args):
+    return process_cif(*args)
+
+
 def generate(in_dir='./CIFs_open_access/', out_dir='./XRDs_open_access/'):
     """
     Generate XRD data from CIF files located in directory in_dir.
@@ -191,14 +196,18 @@ def generate(in_dir='./CIFs_open_access/', out_dir='./XRDs_open_access/'):
     if not os.path.exists(f'{generated_path}/Preprocessed_{root}'):
         os.makedirs(f'{generated_path}/Preprocessed_{root}')
 
+    hkl_info = torch.as_tensor(hkl_info).share_memory_()  # Faster hkl_info data transfer to parallel workers
+
     for path, _, files in os.walk(in_dir):
         with mp.Pool(os.cpu_count()) as pool:
-            pool.starmap(process_cif, tqdm([(path, file, f'{generated_path}/Preprocessed_{root}', hkl_info)
-                                            for file in files if file.endswith('.cif')
-                                            and not os.path.exists(f'{generated_path}/Preprocessed_{root}/{file}')],
-                                           desc=f'Generating synthetic XRDs from crystal data in {path}. '
-                                                f'This can take a moment.'))
+            list(tqdm(pool.imap_unordered(star,
+                                          [(path, file, f'{generated_path}/Preprocessed_{root}', hkl_info)
+                                           for file in files if file.endswith('.cif')
+                                           and not os.path.exists(f'{generated_path}/Preprocessed_{root}/{file}')]),
+                      desc=f'Generating synthetic XRDs from crystal data in {path}. '
+                           f'This can take a moment.', total=len(files)))
 
+    # Non-parallel version
     # for path, _, files in os.walk(in_dir):
     #     for file in tqdm(files, desc=f'Generating synthetic XRDs from crystal data in {path}. This can take a moment.'):
     #         if file.endswith('.cif'):
