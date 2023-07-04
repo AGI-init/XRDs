@@ -7,6 +7,7 @@ import random
 import numpy as np
 
 import torch
+from ML.World.Dataset import Lock
 from torch import nn
 from torch.utils.data import Dataset
 
@@ -106,7 +107,8 @@ class XRD(Dataset):
         self.num_classes = num_classes
 
         if roots is None and train_eval_splits is None:
-            roots, train_eval_splits = data_paths(icsd, open_access, rruff, soup)
+            with Lock('XRD_data'):
+                roots, train_eval_splits = data_paths(icsd, open_access, rruff, soup)
 
         self.indices = []
         self.features = {}
@@ -212,7 +214,8 @@ class MemoryEfficientXRD(Dataset):
         self.num_classes = num_classes
 
         if roots is None and train_eval_splits is None:
-            roots, train_eval_splits = data_paths(icsd, open_access, rruff, soup)
+            with Lock('XRD_data'):
+                roots, train_eval_splits = data_paths(icsd, open_access, rruff, soup)
 
         self.indices = []
         self.features = {}
