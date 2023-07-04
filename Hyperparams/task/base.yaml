@@ -1,6 +1,6 @@
-defaults:
-  - classify@_global_: custom  # UnifiedML/Hyperparams/task/classify/custom
-  - _self_
+imports:
+  - task/classify/custom  # UnifiedML/Hyperparams/task/classify/custom
+  - self
 
 Dataset: XRD.XRD
 
@@ -22,7 +22,6 @@ Eyes: Identity
 Trunk: Identity
 Predictor: Identity
 
-stream: true  # Set to false for faster but more RAM-intensive training
 standardize: false
 norm: true
 

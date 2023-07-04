@@ -1,6 +1,6 @@
-defaults:
-  - base
-  - _self_
+imports:
+  - task/base
+  - self
 
 Eyes: XRD.CNN
 Predictor: XRD.Predictor
