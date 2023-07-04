@@ -4,11 +4,15 @@ import glob
 import os
 import pathlib
 
+import torch
+
 from Data.Generated.CIF import process_cif
 
 from tqdm import tqdm
 
 import numpy as np
+
+from torch import multiprocessing as mp
 
 
 def hkl(hkl_max=10):
@@ -188,18 +192,26 @@ def generate(in_dir='./CIFs_open_access/', out_dir='./XRDs_open_access/'):
         os.makedirs(f'{generated_path}/Preprocessed_{root}')
 
     for path, _, files in os.walk(in_dir):
-        for file in tqdm(files, desc=f'Generating synthetic XRDs from crystal data in {path}. This can take a moment.'):
-            if file.endswith('.cif'):
-                # Save preprocessed data
-                if not os.path.exists(f'{generated_path}/Preprocessed_{root}/{file}'):
-                    process_cif(path, file, f'{generated_path}/Preprocessed_{root}', hkl_info)
+        with mp.Pool(os.cpu_count()) as pool:
+            pool.starmap(process_cif, tqdm([(path, file, f'{generated_path}/Preprocessed_{root}', hkl_info)
+                                            for file in files if file.endswith('.cif')
+                                            and not os.path.exists(f'{generated_path}/Preprocessed_{root}/{file}')],
+                                           desc=f'Generating synthetic XRDs from crystal data in {path}. '
+                                                f'This can take a moment.'))
+
+    # for path, _, files in os.walk(in_dir):
+    #     for file in tqdm(files, desc=f'Generating synthetic XRDs from crystal data in {path}. This can take a moment.'):
+    #         if file.endswith('.cif'):
+    #             # Save preprocessed data
+    #             if not os.path.exists(f'{generated_path}/Preprocessed_{root}/{file}'):
+    #                 process_cif(path, file, f'{generated_path}/Preprocessed_{root}', hkl_info)
 
     preprocessed_files = glob.glob(f'{generated_path}/Preprocessed_{root}/*.txt')
 
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
 
-    # Format processed data for training
+    # Format processed data for training  TODO Do this in process_cif
     for name in sorted(preprocessed_files):
         with open(name) as f:
             xrd = f.readlines()

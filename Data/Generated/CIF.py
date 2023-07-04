@@ -1,3 +1,4 @@
+import itertools
 import os
 import pathlib
 import re
@@ -605,9 +606,10 @@ def process_cif(cif_dir, cif_file, out_dir, hkl_info, x_step=0.01):
         total_points = int(180 / step)
 
         # multiprocess of peak shape function  TODO Made PeakShapeAug; batch vectorization? - Sam
-        pool = mp.Pool(8)
-        pattern = pool.starmap(y_multi, [(x_val, step, xy_merge, H) for x_val in range(0, total_points)])
-        pool.close()
+        # pool = mp.Pool(os.cpu_count())
+        # pattern = pool.starmap(y_multi, [(x_val, step, xy_merge, H) for x_val in range(0, total_points)])
+        pattern = list(itertools.starmap(y_multi, [(x_val, step, xy_merge, H) for x_val in range(0, total_points)]))
+        # pool.close()
         pattern2 = np.zeros((total_points, 2))
         pattern2[:, 1] = np.asarray(pattern)
         pattern2[:, 0] = np.arange(0, 180, step)
@@ -625,9 +627,10 @@ def process_cif(cif_dir, cif_file, out_dir, hkl_info, x_step=0.01):
                 pattern2[:, 1] = np.around(pattern2[:, 1] * 1000, decimals=0)
 
             # Write to new txt file.
-            new_filename = "{}.txt".format(re.split(r"[.]", cif_file)[0])
+            new_filename = f'{re.split(r"[.]", cif_file)[0]}_{peak_shape}_{noise}.txt'
             with open("{}/{}".format(out_dir, new_filename), "w") as new_file:
                 new_file.write(chem_form + "\n")
                 new_file.write("crystal_structure " + str(int(crystal_sys)) + "\n")
                 new_file.write("space_group " + str(int(space_group)) + "\n")
                 new_file.write("\n".join(str(item).replace("[", "").replace("]", "") for item in pattern2.tolist()))
+
