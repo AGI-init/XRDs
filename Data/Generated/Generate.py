@@ -181,11 +181,12 @@ def generate(in_dir='./CIFs_open_access/', out_dir='./XRDs_open_access/'):
     hkl_path = f'{generated_path}/hkl_{hkl_max}.npy'
 
     if os.path.exists(hkl_path):
+        print('Loading in hkl matrix...', end=" ")
         hkl_info = np.load(hkl_path)
     else:
         print('Computing hkl matrix...', end=" ")
         hkl_info = hkl()
-        print('- Done ✓')
+    print('- Done ✓')
 
     root = in_dir.strip('/').split('/')[-1]
 
