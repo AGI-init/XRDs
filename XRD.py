@@ -258,7 +258,7 @@ class MemoryEfficientXRD(Dataset):
         return x, y
 
 
-# Verify or download data
+# Verify or download data  TODO Count data items and resume download/generation as necessary
 def data_paths(icsd, open_access, rruff, soup):
     roots = []
     train_eval_splits = []
