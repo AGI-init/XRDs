@@ -621,7 +621,7 @@ def process_cif(cif_dir, cif_file, out_dir, hkl_info, x_step=0.01):
         pattern2[:, 1] = (pattern2[:, 1] / np.max(pattern2[:, 1])).round(decimals=3)
 
         # TODO Sam:
-        # TODO Remove this; use NoiseAug for 2x data generation speedup + more variation; un-indent the next code block
+        # TODO Remove this; use NoiseAug for small speedup + more variation; un-indent the next code block
         for noise in range(2):
             # Random noise augmentation
             if noise and peak_shape != 2:  # Peak shape 2 represents a perfect crystal, so should not be augmented

@@ -217,11 +217,12 @@ def generate(in_dir='./CIFs_open_access/', out_dir='./XRDs_open_access/'):
 
     preprocessed_files = glob.glob(f'{generated_path}/Preprocessed_{root}/*.txt')
 
+    # TODO Delete below and retrieve via index in Dataset - Downside: current Bluehive generated data becomes obsolete
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
 
     # Format processed data for training
-    for name in sorted(preprocessed_files):
+    for name in tqdm(sorted(preprocessed_files), desc='Converting generated XRD data to training format...'):
         with open(name) as f:
             xrd = f.readlines()
 
