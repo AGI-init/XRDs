@@ -1,6 +1,5 @@
 # This source code is licensed under the MIT license found in the
 # MIT_LICENSE file in the root directory of this source tree.
-import math
 import os
 import random
 
@@ -13,15 +12,13 @@ from torch.utils.data import Dataset
 from Data.Generated.Download import download
 from Data.Generated.Generate import generate
 
-import ML
+from ML import main
 from ML.World.Dataset import Lock
 
 
 class NoPoolCNN(nn.Module):
-    def __init__(self, input_shape=(1,)):
+    def __init__(self, in_channels):
         super().__init__()
-
-        in_channels = input_shape if isinstance(input_shape, int) else input_shape[0]
 
         self.CNN = \
             nn.Sequential(
@@ -41,10 +38,8 @@ class NoPoolCNN(nn.Module):
 
 
 class CNN(nn.Module):
-    def __init__(self, input_shape=(1,)):
+    def __init__(self, in_channels):
         super().__init__()
-
-        in_channels = input_shape if isinstance(input_shape, int) else input_shape[0]
 
         self.CNN = \
             nn.Sequential(
@@ -67,34 +62,28 @@ class CNN(nn.Module):
 
 
 class Predictor(nn.Module):
-    def __init__(self, input_shape=(1024,), output_shape=(7,)):
+    def __init__(self, in_features, out_features):
         super().__init__()
 
-        input_dim = input_shape if isinstance(input_shape, int) else math.prod(input_shape)
-        output_dim = output_shape if isinstance(output_shape, int) else math.prod(output_shape)
-
         self.MLP = nn.Sequential(nn.Flatten(),
-                                 nn.Linear(input_dim, 2300), nn.ReLU(), nn.Dropout(0.5),
+                                 nn.Linear(in_features, 2300), nn.ReLU(), nn.Dropout(0.5),
                                  nn.Linear(2300, 1150), nn.ReLU(), nn.Dropout(0.5),
-                                 nn.Linear(1150, output_dim))
+                                 nn.Linear(1150, out_features))
 
     def forward(self, obs):
         return self.MLP(obs)
 
 
 class MLP(nn.Module):
-    def __init__(self, input_shape=(8500,), output_shape=(7,)):
+    def __init__(self, in_features, out_features):
         super().__init__()
 
-        in_channels = input_shape if isinstance(input_shape, int) else math.prod(input_shape)
-        output_dim = output_shape if isinstance(output_shape, int) else math.prod(output_shape)
-
         self.MLP = nn.Sequential(nn.Flatten(),
-                                 nn.Linear(in_channels, 4000), nn.ReLU(), nn.Dropout(0.6),
+                                 nn.Linear(in_features, 4000), nn.ReLU(), nn.Dropout(0.6),
                                  nn.Linear(4000, 3000), nn.ReLU(), nn.Dropout(0.5),
                                  nn.Linear(3000, 1000), nn.ReLU(), nn.Dropout(0.4),
                                  nn.Linear(1000, 800), nn.ReLU(), nn.Dropout(0.3),
-                                 nn.Linear(800, output_dim))
+                                 nn.Linear(800, out_features))
 
     def forward(self, obs):
         return self.MLP(obs)
@@ -306,4 +295,4 @@ def data_paths(icsd, open_access, rruff, soup):
 
 
 if __name__ == '__main__':
-    ML.launch(task='NPCNN')
+    main(task='NPCNN')
