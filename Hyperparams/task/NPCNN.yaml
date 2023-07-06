@@ -1,5 +1,5 @@
 imports:
-  - task/base
+  - base
   - self
 
 Eyes: XRD.NoPoolCNN
