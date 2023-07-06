@@ -1,5 +1,5 @@
 imports:
-  - task/classify/custom  # UnifiedML/Hyperparams/task/classify/custom
+  - classify/custom  # UnifiedML/Hyperparams/task/classify/custom
   - self
 
 Dataset: XRD.XRD
