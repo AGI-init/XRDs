@@ -25,7 +25,7 @@ Predictor: Identity
 standardize: false
 norm: true
 
-#task_name: ${dataset.num_classes}-Way
+task_name: ${dataset.num_classes}-Way
 
 # Can also uniquely identify each variation dataset
-task_name: ${dataset.num_classes}-Way_ICSD-${dataset.icsd}_Open-Access-${dataset.open_access}_RRUFF-${dataset.rruff}_Soup-${dataset.soup}
+#task_name: ${dataset.num_classes}-Way_ICSD-${dataset.icsd}_Open-Access-${dataset.open_access}_RRUFF-${dataset.rruff}_Soup-${dataset.soup}
