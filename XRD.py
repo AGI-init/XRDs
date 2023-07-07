@@ -160,7 +160,7 @@ def data_paths(icsd, open_access, rruff, soup):
             print('Could not find ICSD CIF files. Using open-access CIFs instead.')
 
     if open_access or not icsd:
-        if len(glob.glob(path + '/Data/Generated/XRDs_open_access/*.npy')) < 8e3:  # Approximate length check
+        if len(glob.glob(path + '/Data/Generated/XRDs_open_access/*.npy')) < 8e3 * 7:  # Approximate length check
             with Lock(path + '/Data/Generated/CIFs_open_access/Lock'):  # System-wide lock
                 from Data.CIF import generate, download
                 if len(glob.glob(path + '/Data/Generated/CIFs_open_access/*.cif')) < 8e3:  # Approximate length check
