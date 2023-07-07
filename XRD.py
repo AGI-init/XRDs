@@ -197,6 +197,7 @@ TODO
  Conclusion: NoiseAug can be batch-vectorized and moved to GPU, peak shapes can be sped up but remain on CPU.
  """
 
+
 # Peak shape and random noise transform
 class PeakShapeTransform:
     def __init__(self, peak_shapes=(0, 1, 2, 3), noise=True, x_step=0.01):
