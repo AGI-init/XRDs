@@ -782,9 +782,9 @@ def process_cif(cif_path, hkl_info=_hkl_info, x_step=0.01, peak_shapes=((0.05, -
             features = features.astype(int).reshape(1, -1)
 
             if save_path:
-                save_path += f'_{peak_shape}_{noise}'
-                os.makedirs(os.path.dirname(save_path), exist_ok=True)
-                np.save(save_path, {'features': features, 'labels7': labels7, 'labels230': labels230})
+                name = save_path + f'_{peak_shape}_{noise}'
+                os.makedirs(os.path.dirname(name), exist_ok=True)
+                np.save(name, {'features': features, 'labels7': labels7, 'labels230': labels230})
 
             XRDs.append((features, labels7, labels230))
     return XRDs
