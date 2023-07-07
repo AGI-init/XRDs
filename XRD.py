@@ -1,5 +1,6 @@
 # This source code is licensed under the MIT license found in the
 # MIT_LICENSE file in the root directory of this source tree.
+import glob
 import os
 import random
 
@@ -8,9 +9,6 @@ import numpy as np
 import torch
 from torch import nn
 from torch.utils.data import Dataset
-
-from Data.Generated.Download import download
-from Data.Generated.Generate import generate
 
 from ML import main
 from ML.World.Dataset import Lock
@@ -91,36 +89,26 @@ class MLP(nn.Module):
 
 class XRD(Dataset):
     def __init__(self, icsd=True, open_access=True, rruff=True, soup=True, train=True, num_classes=7, seed=0,
-                 roots=None, train_eval_splits=None):
+                 sources=None, train_eval_splits=None):
 
         self.num_classes = num_classes
 
-        if roots is None and train_eval_splits is None:
-            with Lock('XRD_data'):  # System-wide lock
-                roots, train_eval_splits = data_paths(icsd, open_access, rruff, soup)
+        if sources is None or train_eval_splits is None:
+            roots, train_eval_splits = data_paths(icsd, open_access, rruff, soup)
+        else:
+            roots = [glob.glob(source) for source in sources]
 
         self.indices = []
-        self.features = {}
-        self.labels = {}
+        self.data = {}
 
         for i, (root, split) in enumerate(zip(roots, train_eval_splits)):
-            features_path = root + "features.csv"
-            label_path = root + f"labels{num_classes}.csv"
+            print(f'Locating [root={root}, split={split if train else 1 - split}, train={train}]...')
+            self.data[i] = root
+            print('Data located ✓')
 
-            print(f'Loading [root={root}, split={split if train else 1 - split}, train={train}] to CPU...')
+            train_size = round(len(root) * split)
 
-            # Store files
-            with open(features_path, "r") as f:
-                self.features[i] = f.readlines()
-            with open(label_path, "r") as f:
-                self.labels[i] = f.readlines()
-                full_size = len(self.labels[i])
-
-            print('Data loaded ✓')
-
-            train_size = round(full_size * split)
-
-            full = range(full_size)
+            full = range(len(root))
 
             # Each worker shares an indexing scheme
             random.seed(seed)
@@ -136,26 +124,81 @@ class XRD(Dataset):
     def __getitem__(self, idx):
         root, idx = self.indices[idx]
 
-        x = torch.FloatTensor(list(map(float, self.features[root][idx].strip().split(','))))
-        y = np.array(list(map(float, self.labels[root][idx].strip().split(',')))).argmax()
+        # Load data from hard disk
+        data = np.load(self.data[root][idx])
+        x, y = data['features'], data['labels7' if self.num_classes == 7 else 'labels230']
 
         return x, y
 
 
+# Verify or download data  TODO Count data items and resume download/generation as necessary
+def data_paths(icsd, open_access, rruff, soup):
+    roots = []
+    train_eval_splits = []
+
+    path = os.path.dirname(__file__)
+
+    if rruff:
+        if os.path.exists(path + '/Data/Generated/XRDs_RRUFF/'):
+            roots.append(glob.glob(path + '/Data/Generated/XRDs_RRUFF/'))
+            train_eval_splits += [0.5 if soup else 0]  # Split 50% of experimental RRUFF data just for training
+        else:
+            rruff = False
+            print('Could not find RRUFF XRD files. Skipping souping and evaluating on '
+                  '10% held-out portion of synthetic data.')
+
+    if icsd:
+        if os.path.exists(path + '/Data/Generated/XRDs_ICSD/') or os.path.exists(path + '/Data/Generated/CIFs_ICSD/'):
+            if not os.path.exists(path + '/Data/Generated/XRDs_ICSD/'):
+                from Data.CIF import generate
+                with Lock(path + '/Data/Generated/CIFs_ICSD/Lock'):  # System-wide lock
+                    generate(path + '/Data/Generated/CIFs_ICSD/')  # Generate data
+            roots.append(glob.glob(path + '/Data/Generated/XRDs_ICSD/'))
+            train_eval_splits += [1 if rruff else 0.9]  # Train on all synthetic data if evaluating on RRUFF
+        else:
+            icsd = False
+            print('Could not find ICSD CIF files. Using open-access CIFs instead.')
+
+    if open_access or not icsd:
+        if not os.path.exists(path + '/Data/Generated/XRDs_open_access/'):
+            with Lock(path + '/Data/Generated/CIFs_open_access/Lock'):  # System-wide lock
+                from Data.CIF import generate, download
+                if not os.path.exists(path + '/Data/Generated/CIFs_open_access/'):
+                    download(path + '/Data/Generated/', 'CIFs_open_access/')
+                generate(path + '/Data/Generated/CIFs_open_access/')  # Generate data
+        roots.append(glob.glob(path + '/Data/Generated/XRDs_open_access/'))
+        train_eval_splits += [1 if rruff else 0.9]  # Train on all synthetic data if evaluating on RRUFF
+
+    return roots, train_eval_splits
+
+
+if __name__ == '__main__':
+    main(task='NPCNN')
+
+
+"""
+Below are in-progress experiments
+"""
+
+
+# Moving noise augmentation to batch-vectorized GPU
 class NoiseAug:
     def __call__(self, x):
         return torch.relu(torch.normal(mean=x, std=20))
 
 
-# TODO
-#  1. What is the shape of xy_merge in data generation? - Answer: It varies (variable length x 2)
-#  2. Can this "y_multi" loop be optimized / batch vectorized? - Answer: Yes!
-#     - Either manually batch vectorizing
-#     - Or JIT
-#  ---
-#  Conclusion: NoiseAug can be batch-vectorized and moved to GPU, peak shapes can be sped up but remain on CPU.
-# Peak shape and random noise augmentation
-class PeakShapeAug:
+"""
+TODO
+ 1. What is the shape of xy_merge in data generation? - Answer: It varies (variable length x 2)
+ 2. Can this "y_multi" loop be optimized / batch vectorized? - Answer: Yes!
+    - Either manually batch vectorizing
+    - Or JIT
+ ---
+ Conclusion: NoiseAug can be batch-vectorized and moved to GPU, peak shapes can be sped up but remain on CPU.
+ """
+
+# Peak shape and random noise transform
+class PeakShapeTransform:
     def __init__(self, peak_shapes=(0, 1, 2, 3), noise=True, x_step=0.01):
         self.peak_shapes = peak_shapes
         self.noise = noise
@@ -195,104 +238,13 @@ class PeakShapeAug:
         return x
 
 
-# Can use this Dataset instead to avoid loading the full dataset into RAM
-class MemoryEfficientXRD(Dataset):
-    def __init__(self, icsd=True, open_access=True, rruff=True, soup=True, train=True, num_classes=7, seed=0,
-                 roots=None, train_eval_splits=None):
+# Generate RRUFF from original format:
 
-        self.num_classes = num_classes
-
-        if roots is None and train_eval_splits is None:
-            with Lock('XRD_data'):  # System-wide lock
-                roots, train_eval_splits = data_paths(icsd, open_access, rruff, soup)
-
-        self.indices = []
-        self.features = {}
-        self.labels = {}
-
-        for i, (root, split) in enumerate(zip(roots, train_eval_splits)):
-            features_path = root + "features.csv"
-            label_path = root + f"labels{num_classes}.csv"
-
-            print(f'Loading [root={root}, split={split if train else 1 - split}, train={train}] to CPU...')
-
-            self.features[i] = features_path
-            with open(label_path, "r") as f:
-                self.labels[i] = label_path
-                full_size = sum(1 for _ in f)
-
-            print('Data loaded ✓')
-
-            train_size = round(full_size * split)
-
-            full = range(full_size)
-
-            # Each worker shares an indexing scheme
-            random.seed(seed)
-            train_indices = random.sample(full, train_size)
-            eval_indices = set(full).difference(train_indices)
-
-            indices = train_indices if train else eval_indices
-            self.indices += zip([i] * len(indices), list(indices))
-
-    def __len__(self):
-        return len(self.indices)
-
-    def __getitem__(self, idx):
-        root, idx = self.indices[idx]
-
-        # This reads in the lines incrementally without ever loading the whole file into memory
-        with open(self.features[root], "r") as f:
-            for i, features in enumerate(f):
-                if i == idx:
-                    break
-
-        with open(self.labels[root], "r") as f:
-            for i, labels in enumerate(f):
-                if i == idx:
-                    break
-
-        x = torch.FloatTensor(list(map(float, features.strip().split(','))))
-        y = np.array(list(map(float, labels.strip().split(',')))).argmax()
-
-        return x, y
-
-
-# Verify or download data  TODO Count data items and resume download/generation as necessary
-def data_paths(icsd, open_access, rruff, soup):
-    roots = []
-    train_eval_splits = []
-
-    path = os.path.dirname(__file__)
-
-    if rruff:
-        if os.path.exists(path + '/Data/Generated/XRDs_RRUFF/'):
-            roots.append(path + '/Data/Generated/XRDs_RRUFF/')
-            train_eval_splits += [0.5 if soup else 0]  # Split 50% of experimental RRUFF data just for training
-        else:
-            rruff = False
-            print('Could not find RRUFF XRD files. Skipping souping and evaluating on '
-                  '10% held-out portion of synthetic data.')
-
-    if icsd:
-        if os.path.exists(path + '/Data/Generated/CIFs_ICSD/'):
-            generate(path + '/Data/Generated/CIFs_ICSD/', path + '/Data/Generated/XRDs_ICSD/')
-            roots.append(path + '/Data/Generated/XRDs_ICSD/')
-            train_eval_splits += [1 if rruff else 0.9]  # Train on all synthetic data if evaluating on RRUFF
-        else:
-            icsd = False
-            print('Could not find ICSD CIF files. Using open-access CIFs instead.')
-
-    if open_access or not icsd:
-        if not os.path.exists(path + '/Data/Generated/XRDs_open_access/'):
-            if not os.path.exists(path + '/Data/Generated/CIFs_open_access/'):
-                download(path + '/Data/Generated/', 'CIFs_open_access/')
-            generate(path + '/Data/Generated/CIFs_open_access/', path + '/Data/Generated/XRDs_open_access/')
-        roots.append(path + '/Data/Generated/XRDs_open_access/')
-        train_eval_splits += [1 if rruff else 0.9]  # Train on all synthetic data if evaluating on RRUFF
-
-    return roots, train_eval_splits
-
-
-if __name__ == '__main__':
-    main(task='NPCNN')
+# with open('Data/Generated/XRDs_RRUFF/features.csv', "r") as f:
+#     features = f.readlines()
+# with open('Data/Generated/XRDs_RRUFF/labels7.csv', "r") as f:
+#     labels7 = f.readlines()
+# with open('Data/Generated/XRDs_RRUFF/labels230.csv', "r") as f:
+#     labels230 = f.readlines()
+# for i, features in enumerate(features):
+#     np.save(f'Data/Generated/XRDs_RRUFF/{i}', {'features': features, 'labels7': labels7, 'labels230': labels230})
