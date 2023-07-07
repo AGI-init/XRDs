@@ -815,13 +815,12 @@ def generate(in_dir=None):
 
     # Multiprocessing XRD data generation
     with mp.Pool(num_workers) as pool:
-        list(tqdm(pool.imap_unordered(star,
-                                      [dict(cif_path=file,
-                                            save_path=f'{save_path}{os.path.basename(file).rsplit(".", 1)[0]}')
-                                       for file in files if file.endswith('.cif') and not
-                                       os.path.exists(f'{save_path}{os.path.basename(file).rsplit(".", 1)[0]}_3_1.npy')]
-                                      ), desc=f'Generating synthetic XRDs from crystal data in {path}. '
-                                              f'This can take a moment. Using {num_workers} workers', total=len(files)))
+        args = [dict(cif_path=file, save_path=f'{save_path}{os.path.basename(file).rsplit(".", 1)[0]}')
+                for file in files if file.endswith('.cif') and
+                not os.path.exists(f'{save_path}{os.path.basename(file).rsplit(".", 1)[0]}_3_1.npy')]
+        list(tqdm(pool.imap_unordered(star, args),
+                  desc=f'Generating synthetic XRDs from crystal data in {path}. '
+                       f'This can take a moment. Using {num_workers} workers', total=len(args)))
 
 
 if __name__ == '__main__':
