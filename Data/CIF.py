@@ -1,6 +1,8 @@
 import os.path
 import random
 import re
+from pathlib import Path
+
 import pandas as pd
 import numpy as np
 import requests
@@ -11,7 +13,7 @@ from torch import as_tensor, multiprocessing as mp
 
 def download(save_path):
     os.makedirs(save_path, exist_ok=True)
-    downloaded = glob.glob(save_path.rstrip('/') + '*.cif')
+    downloaded = glob.glob(save_path.rstrip('/') + '/*.cif')
 
     with open(os.path.dirname(__file__) + '/DOWNLOAD.txt', "r") as f:
         # Iterate through download destinations
