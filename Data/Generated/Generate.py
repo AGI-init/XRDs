@@ -174,10 +174,15 @@ def star(args):
     return process_cif(*args)
 
 
-def generate(in_dir='./CIFs_open_access/', out_dir='./XRDs_open_access/'):
+def generate(in_dir=None, out_dir=None):
     """
     Generate XRD data from CIF files located in directory in_dir.
     """
+
+    if in_dir is None:
+        in_dir = os.path.dirname(__file__) + '/CIFs_open_access/'
+    if out_dir is None:
+        out_dir = os.path.dirname(__file__) + '/XRDs_open_access/'
 
     # Generate hkl matrix up to precision 10
     hkl_max = 10
