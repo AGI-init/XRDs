@@ -787,7 +787,8 @@ def process_cif(cif_path, hkl_info=_hkl_info, x_step=0.01, peak_shapes=((0.05, -
                 np.save(name, {'features': features, 'labels7': labels7, 'labels230': labels230})
 
             XRDs.append((features, labels7, labels230))
-    return XRDs
+    if not save_path:
+        return XRDs
 
 
 # tqdm starmap compatibility https://stackoverflow.com/a/67845088/22002059
@@ -807,7 +808,7 @@ def generate(in_dir=None):
 
     name = in_dir.rstrip('/').split('/')[-1].replace('CIFs_', '')
 
-    num_workers = min(os.cpu_count(), 70)
+    num_workers = min(os.cpu_count(), 30)
 
     files = glob.glob(in_dir.rstrip('/') + '/*.cif')
     save_path = f'{root}Generated/XRDs_{name}/'
