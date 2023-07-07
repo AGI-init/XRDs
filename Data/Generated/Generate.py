@@ -207,14 +207,16 @@ def generate(in_dir=None, out_dir=None):
 
     hkl_info = torch.as_tensor(hkl_info).share_memory_()  # Faster hkl_info data transfer to parallel workers
 
+    num_workers = os.cpu_count()
+
     for path, _, files in os.walk(in_dir):
-        with mp.Pool(os.cpu_count()) as pool:
+        with mp.Pool(num_workers) as pool:
             list(tqdm(pool.imap_unordered(star,
                                           [(path, file, f'{generated_path}/Preprocessed_{root}', hkl_info)
                                            for file in files if file.endswith('.cif')
                                            and not os.path.exists(f'{generated_path}/Preprocessed_{root}/{file}')]),
                       desc=f'Generating synthetic XRDs from crystal data in {path}. '
-                           f'This can take a moment.', total=len(files)))
+                           f'This can take a moment. Using {num_workers} workers.', total=len(files)))
 
     # Non-parallel version
     # for path, _, files in os.walk(in_dir):
