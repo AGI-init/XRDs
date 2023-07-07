@@ -1,8 +1,6 @@
 import os.path
 import random
 import re
-from pathlib import Path
-
 import pandas as pd
 import numpy as np
 import requests
@@ -276,7 +274,7 @@ for i in range(195, 231):
     space_group_map_dict[i] = 7
 
 
-def process_cif(cif_path, hkl_info=_hkl_info, x_step=0.01, peak_shapes=((0.05, -0.01, 0.01),), save_path=None):
+def process_cif(cif_path, hkl_info=_hkl_info, x_step=0.01, save_path=None):
     """To load and extract a CIF file, we need:
         1. CELL: cell information
         2. SYMM: symmetry operation to expand the whole cell
