@@ -3,21 +3,26 @@ import re
 import pandas as pd
 import numpy as np
 import requests
+import glob
 from tqdm import tqdm
 from torch import as_tensor, multiprocessing as mp
 
 
-def download(path, name):
-    os.makedirs(path + name, exist_ok=True)
+def download(save_path):
+    os.makedirs(save_path, exist_ok=True)
+    downloaded = glob.glob(save_path + '*.cif')
 
-    with open(path + 'DOWNLOAD.txt', "r") as f:
+    with open(os.path.dirname(__file__) + '/DOWNLOAD.txt', "r") as f:
         # Iterate through download destinations
         for url in tqdm(f.readlines(), desc='Downloading open-access CIFs'):
+            name = save_path + ''.join(url.split('/')[-1].split('.cif')[:-1]) + '.cif'
+            if name in downloaded:
+                continue
             # Download CIF file data
             cif = requests.get(url).content
             # Check if non-empty
             if cif:
-                open(path + name + ''.join(url.split('/')[-1].split('.cif')[:-1]) + '.cif', 'wb').write(cif)
+                open(name, 'wb').write(cif)
 
 
 def hkl(hkl_max=10, hkl_path=None):
@@ -183,6 +188,9 @@ def sym_op(symm_op_line, symm_atom_info):
     # Here we reduce the shape of matrix from n*6 to n*5, dumped the idx column
     atom_info_symm = np.zeros((symm_atom_info.shape[0], symm_atom_info.shape[1]))
     # We know x, y, z fraction should be copied from previous matrix's column 3, 4, 5
+    x = symm_atom_info[:, 2]
+    y = symm_atom_info[:, 3]
+    z = symm_atom_info[:, 4]
     # Here we use pd.eval to change string to executable expression
     # Inwhich 3 expressions, varaibles are x, y, z defined above
     x_new = pd.eval(symm_op_x)
@@ -237,12 +245,14 @@ os.makedirs(path, exist_ok=True)
 hkl_path = f'{path}/hkl_{hkl_max}.npy'
 
 if os.path.exists(hkl_path):
-    print('Loading in hkl matrix...', end=" ")
+    if mp.current_process().name == 'MainProcess':
+        print('Loading in hkl matrix...', end=" ")
     _hkl_info = as_tensor(np.load(hkl_path)).share_memory_()
 else:
     print('Computing hkl matrix...', end=" ")
     _hkl_info = as_tensor(hkl(hkl_max, hkl_path))
-print('- Done ✓')
+if mp.current_process().name == 'MainProcess':
+    print('- Done ✓')
 
 
 # Create a dictionary mapping space group to crystal structure.
@@ -272,11 +282,11 @@ def process_cif(cif_path, hkl_info=_hkl_info, x_step=0.01, peak_shapes=((0.05, -
     hkl_info = hkl_info.numpy()
 
     # Locate .cif files. This works for both absolute dir and relative dir.
-    with open(cif_path, "r", encoding="UTF-8") as cif_content:
+    with open(cif_path, 'r', encoding='UTF-8') as cif_content:
         cif_content_lines = cif_content.readlines()
 
     # Open tables for ion scattering data.
-    with open("ion scattering table.txt", "r") as scat_table:
+    with open(os.path.dirname(__file__) + '/ION_SCATTERING_TABLE.txt', 'r') as scat_table:
         scat_table_lines = scat_table.readlines()
     # And create a dictionary using this file to log ions with its idx.
     chem_dict = {}
@@ -718,7 +728,7 @@ def process_cif(cif_path, hkl_info=_hkl_info, x_step=0.01, peak_shapes=((0.05, -
     x_y[:, 1] = inte[:, 0]
 
     # After having all twotheta and its intensities, we realize that some intensities are zero, we first filter them out.
-    xy_redu = x_y[np.all(x_y!=0, axis=1)]
+    xy_redu = x_y[np.all(x_y != 0, axis=1)]
 
     # After having a pure xy data, we merge their intensites if they are in same peak position.
     xy_merge = np.zeros((1, 2))
@@ -766,6 +776,7 @@ def process_cif(cif_path, hkl_info=_hkl_info, x_step=0.01, peak_shapes=((0.05, -
         features = features.astype(int).reshape(1, -1)
 
         if save_path:
+            os.makedirs(os.path.dirname(save_path), exist_ok=True)
             np.save(save_path, {'features': features, 'labels7': labels7, 'labels230': labels230})
 
         XRDs.append((features, labels7, labels230))
@@ -785,7 +796,7 @@ def generate(in_dir=None):
     root = os.path.dirname(__file__) + '/'
 
     if in_dir is None:
-        in_dir = root + '/CIFs_open_access'
+        in_dir = path + '/CIFs_open_access'
 
     name = in_dir.strip('/').split('/')[-1]
 
@@ -794,7 +805,8 @@ def generate(in_dir=None):
     for cif_path, _, files in os.walk(in_dir):
         with mp.Pool(num_workers) as pool:
             list(tqdm(pool.imap_unordered(star,
-                                          [dict(cif_path=f'{cif_path}/{file}', save_path=f'{root}Generated/XRDs_{name}')
+                                          [dict(cif_path=f'{cif_path}/{file}',
+                                                save_path=f'{root}Generated/XRDs_{name}/{file.rsplit(".", 1)[0]}')
                                            for file in files if file.endswith('.cif')
                                            and not os.path.exists(f'{root}/Generated/XRDs_{name}/{file}')]),
                       desc=f'Generating synthetic XRDs from crystal data in {path}. '

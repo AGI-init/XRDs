@@ -163,8 +163,8 @@ def data_paths(icsd, open_access, rruff, soup):
         if not os.path.exists(path + '/Data/Generated/XRDs_open_access/'):
             with Lock(path + '/Data/Generated/CIFs_open_access/Lock'):  # System-wide lock
                 from Data.CIF import generate, download
-                if not os.path.exists(path + '/Data/Generated/CIFs_open_access/'):
-                    download(path + '/Data/Generated/', 'CIFs_open_access/')
+                if len(glob.glob(path + '/Data/Generated/CIFs_open_access/*.cif')) < 10:  # Approximate length check
+                    download(path + '/Data/Generated/CIFs_open_access/')
                 generate(path + '/Data/Generated/CIFs_open_access/')  # Generate data
         roots.append(glob.glob(path + '/Data/Generated/XRDs_open_access/'))
         train_eval_splits += [1 if rruff else 0.9]  # Train on all synthetic data if evaluating on RRUFF
