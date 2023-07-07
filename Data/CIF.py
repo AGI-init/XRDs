@@ -808,7 +808,7 @@ def generate(in_dir=None):
 
     name = in_dir.rstrip('/').split('/')[-1].replace('CIFs_', '')
 
-    num_workers = min(os.cpu_count(), 30)
+    num_workers = os.cpu_count()
 
     files = glob.glob(in_dir.rstrip('/') + '/*.cif')
     save_path = f'{root}Generated/XRDs_{name}/'
