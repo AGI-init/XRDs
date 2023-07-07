@@ -760,7 +760,8 @@ def process_cif(cif_path, hkl_info=_hkl_info, x_step=0.01, save_path=None):
 
         total_points = int(180 / x_step)
 
-        pattern = [y_multi(x_val, x_step, xy_merge, H) for x_val in range (0, total_points)]
+        # TODO Perhaps better to parallelize this
+        pattern = [y_multi(x_val, x_step, xy_merge, H) for x_val in range(0, total_points)]
         pattern2 = np.zeros((total_points, 2))
         pattern2[:, 1] = np.asarray(pattern)
         pattern2[:, 0] = np.arange(0, 180, x_step)
@@ -808,7 +809,7 @@ def generate(in_dir=None):
 
     name = in_dir.rstrip('/').split('/')[-1].replace('CIFs_', '')
 
-    num_workers = min(os.cpu_count(), 70)
+    num_workers = min(os.cpu_count(), 24)
 
     files = glob.glob(in_dir.rstrip('/') + '/*.cif')
     save_path = f'{root}Generated/XRDs_{name}/'
