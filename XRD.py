@@ -149,7 +149,7 @@ def data_paths(icsd, open_access, rruff, soup):
 
     if icsd:
         if os.path.exists(path + '/Data/Generated/XRDs_ICSD/') or os.path.exists(path + '/Data/Generated/CIFs_ICSD/'):
-            if not os.path.exists(path + '/Data/Generated/XRDs_ICSD/'):
+            if len(glob.glob(path + '/Data/Generated/XRDs_ICSD/*.npy')) < 171e3:  # Approximate length check
                 from Data.CIF import generate
                 with Lock(path + '/Data/Generated/CIFs_ICSD/Lock'):  # System-wide lock
                     generate(path + '/Data/Generated/CIFs_ICSD/')  # Generate data
