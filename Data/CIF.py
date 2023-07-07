@@ -235,6 +235,27 @@ def y_multi(x_val, step, xy_merge, H):
     return y_val
 
 
+# Generate hkl info
+hkl_max = 10
+
+# Path for caching hkl matrix, etc
+path = f'{os.path.dirname(__file__)}/Generated'
+os.makedirs(path, exist_ok=True)
+
+# Generate hkl matrix up to precision hkl_max
+hkl_path = f'{path}/hkl_{hkl_max}.npy'
+
+if os.path.exists(hkl_path):
+    if mp.current_process().name == 'MainProcess':
+        print('Loading in hkl matrix...', end=" ")
+    _hkl_info = as_tensor(np.load(hkl_path)).share_memory_()
+else:
+    print('Computing hkl matrix...', end=" ")
+    _hkl_info = as_tensor(hkl(hkl_max, hkl_path))
+if mp.current_process().name == 'MainProcess':
+    print('- Done ✓')
+
+
 # Create a dictionary mapping space group to crystal structure.
 space_group_map_dict = {}
 for i in range(1, 3):
@@ -253,7 +274,7 @@ for i in range(195, 231):
     space_group_map_dict[i] = 7
 
 
-def process_cif(cif_path, hkl_info, x_step=0.01, save_path=None):
+def process_cif(cif_path, hkl_info=_hkl_info, x_step=0.01, save_path=None):
     """To load and extract a CIF file, we need:
         1. CELL: cell information
         2. SYMM: symmetry operation to expand the whole cell
@@ -793,30 +814,9 @@ def generate(in_dir=None):
     files = glob.glob(in_dir.rstrip('/') + '/*.cif')
     save_path = f'{root}Generated/XRDs_{name}/'
 
-    # Generate hkl info
-    hkl_max = 10
-
-    # Path for caching hkl matrix, etc
-    path = f'{os.path.dirname(__file__)}/Generated'
-    os.makedirs(path, exist_ok=True)
-
-    # Generate hkl matrix up to precision hkl_max
-    hkl_path = f'{path}/hkl_{hkl_max}.npy'
-
-    if os.path.exists(hkl_path):
-        if mp.current_process().name == 'MainProcess':
-            print('Loading in hkl matrix...', end=" ")
-        hkl_info = as_tensor(np.load(hkl_path)).share_memory_()
-    else:
-        print('Computing hkl matrix...', end=" ")
-        hkl_info = as_tensor(hkl(hkl_max, hkl_path))
-    if mp.current_process().name == 'MainProcess':
-        print('- Done ✓')
-
     # Multiprocessing XRD data generation
     with mp.Pool(num_workers) as pool:
-        args = [dict(cif_path=file, hkl_info=hkl_info,
-                     save_path=f'{save_path}{os.path.basename(file).rsplit(".", 1)[0]}')
+        args = [dict(cif_path=file, save_path=f'{save_path}{os.path.basename(file).rsplit(".", 1)[0]}')
                 for file in files if file.endswith('.cif') and
                 not os.path.exists(f'{save_path}{os.path.basename(file).rsplit(".", 1)[0]}_3_1.npy')]
         list(tqdm(pool.imap_unordered(star, args),
