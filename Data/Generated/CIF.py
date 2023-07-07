@@ -597,9 +597,13 @@ def process_cif(cif_dir, cif_file, out_dir, hkl_info, x_step=0.01):
 
     # TODO Output xy_merge and use PeakShapeAug? Challenge: xy_merge shape varies. - Sam
 
+    peak_shapes = [(0.05, -0.06, 0.07), (0.05, -0.01, 0.01),
+                   (0.0, 0.0, 0.01), (0.0, 0.0, random.uniform(0.001, 0.1))]
+
+    # peak_shapes = peak_shapes[-1:]  # Only use last? TODO just testing
+
     # Augment different peak shape functions, determined by U, V, W - Note: can be moved to training-time
-    for peak_shape, (U, V, W) in enumerate([(0.05, -0.06, 0.07), (0.05, -0.01, 0.01),
-                                            (0.0, 0.0, 0.01), (0.0, 0.0, random.uniform(0.001, 0.1))]):
+    for peak_shape, (U, V, W) in enumerate(peak_shapes):
         H = np.zeros((xy_merge.shape[0], 1))
         H[:, 0] = (U * (np.tan(xy_merge[:, 0] * (np.pi / 180) / 2)) ** 2 + V * np.tan(
             xy_merge[:, 0] * (np.pi / 180) / 2) + W) ** (1 / 2)

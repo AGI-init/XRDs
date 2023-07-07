@@ -6,7 +6,10 @@ import pathlib
 
 import torch
 
-from Data.Generated.CIF import process_cif
+try:
+    from CIF import process_cif
+except ModuleNotFoundError:
+    from .CIF import process_cif
 
 from tqdm import tqdm
 
