@@ -807,7 +807,7 @@ def generate(in_dir=None):
 
     name = in_dir.rstrip('/').split('/')[-1].replace('CIFs_', '')
 
-    num_workers = os.cpu_count()
+    num_workers = min(os.cpu_count(), 30)
 
     files = glob.glob(in_dir.rstrip('/') + '/*.cif')
     save_path = f'{root}Generated/XRDs_{name}/'
@@ -818,9 +818,9 @@ def generate(in_dir=None):
                                       [dict(cif_path=file,
                                             save_path=f'{save_path}{os.path.basename(file).rsplit(".", 1)[0]}')
                                        for file in files if file.endswith('.cif') and not
-                                       os.path.exists(f'{save_path}{os.path.basename(file).rsplit(".", 1)[0]}')]),
-                  desc=f'Generating synthetic XRDs from crystal data in {path}. '
-                       f'This can take a moment. Using {num_workers} workers', total=len(files)))
+                                       os.path.exists(f'{save_path}{os.path.basename(file).rsplit(".", 1)[0]}_3_1.npy')]
+                                      ), desc=f'Generating synthetic XRDs from crystal data in {path}. '
+                                              f'This can take a moment. Using {num_workers} workers', total=len(files)))
 
 
 if __name__ == '__main__':
