@@ -96,15 +96,13 @@ class XRD(Dataset):
         if sources is None or train_eval_splits is None:
             roots, train_eval_splits = data_paths(icsd, open_access, rruff, soup)
         else:
-            roots = [glob.glob(source) for source in sources]
+            roots = [glob.glob(source.rstrip('/') + '/*.npy') for source in sources]
 
         self.indices = []
         self.data = {}
 
         for i, (root, split) in enumerate(zip(roots, train_eval_splits)):
-            print(f'Locating [root={root}, split={split if train else 1 - split}, train={train}]...')
             self.data[i] = root
-            print('Data located ✓')
 
             train_size = round(len(root) * split)
 
@@ -118,6 +116,8 @@ class XRD(Dataset):
             indices = train_indices if train else eval_indices
             self.indices += zip([i] * len(indices), list(indices))
 
+            print(f'Identified [source of length {len(root)}, split={split if train else 1 - split}, train={train}] ✓')
+
     def __len__(self):
         return len(self.indices)
 
@@ -125,7 +125,7 @@ class XRD(Dataset):
         root, idx = self.indices[idx]
 
         # Load data from hard disk
-        data = np.load(self.data[root][idx])
+        data = np.load(self.data[root][idx], allow_pickle=True).item()
         x, y = data['features'], data['labels7' if self.num_classes == 7 else 'labels230']
 
         return x, y
@@ -140,7 +140,7 @@ def data_paths(icsd, open_access, rruff, soup):
 
     if rruff:
         if os.path.exists(path + '/Data/Generated/XRDs_RRUFF/'):
-            roots.append(glob.glob(path + '/Data/Generated/XRDs_RRUFF/'))
+            roots.append(glob.glob(path + '/Data/Generated/XRDs_RRUFF/*.npy'))
             train_eval_splits += [0.5 if soup else 0]  # Split 50% of experimental RRUFF data just for training
         else:
             rruff = False
@@ -153,20 +153,20 @@ def data_paths(icsd, open_access, rruff, soup):
                 from Data.CIF import generate
                 with Lock(path + '/Data/Generated/CIFs_ICSD/Lock'):  # System-wide lock
                     generate(path + '/Data/Generated/CIFs_ICSD/')  # Generate data
-            roots.append(glob.glob(path + '/Data/Generated/XRDs_ICSD/'))
+            roots.append(glob.glob(path + '/Data/Generated/XRDs_ICSD/*.npy'))
             train_eval_splits += [1 if rruff else 0.9]  # Train on all synthetic data if evaluating on RRUFF
         else:
             icsd = False
             print('Could not find ICSD CIF files. Using open-access CIFs instead.')
 
     if open_access or not icsd:
-        if not os.path.exists(path + '/Data/Generated/XRDs_open_access/'):
+        if len(glob.glob(path + '/Data/Generated/XRDs_open_access/*.npy')) < 8e3:  # Approximate length check
             with Lock(path + '/Data/Generated/CIFs_open_access/Lock'):  # System-wide lock
                 from Data.CIF import generate, download
-                if len(glob.glob(path + '/Data/Generated/CIFs_open_access/*.cif')) < 10:  # Approximate length check
+                if len(glob.glob(path + '/Data/Generated/CIFs_open_access/*.cif')) < 8e3:  # Approximate length check
                     download(path + '/Data/Generated/CIFs_open_access/')
                 generate(path + '/Data/Generated/CIFs_open_access/')  # Generate data
-        roots.append(glob.glob(path + '/Data/Generated/XRDs_open_access/'))
+        roots.append(glob.glob(path + '/Data/Generated/XRDs_open_access/*.npy'))
         train_eval_splits += [1 if rruff else 0.9]  # Train on all synthetic data if evaluating on RRUFF
 
     return roots, train_eval_splits
@@ -241,11 +241,16 @@ class PeakShapeTransform:
 
 # Generate RRUFF from original format:
 
-# with open('Data/Generated/XRDs_RRUFF/features.csv', "r") as f:
+# os.makedirs('Data/Generated/XRDs_RRUFF/', exist_ok=True)
+#
+# with open('Data_old/Generated/XRDs_RRUFF/features.csv', "r") as f:
 #     features = f.readlines()
-# with open('Data/Generated/XRDs_RRUFF/labels7.csv', "r") as f:
+# with open('Data_old/Generated/XRDs_RRUFF/labels7.csv', "r") as f:
 #     labels7 = f.readlines()
-# with open('Data/Generated/XRDs_RRUFF/labels230.csv', "r") as f:
+# with open('Data_old/Generated/XRDs_RRUFF/labels230.csv', "r") as f:
 #     labels230 = f.readlines()
 # for i, features in enumerate(features):
-#     np.save(f'Data/Generated/XRDs_RRUFF/{i}', {'features': features, 'labels7': labels7, 'labels230': labels230})
+#     x = torch.FloatTensor(list(map(float, features.strip().split(',')))).view(1, 8500).numpy()
+#     y7 = np.array(list(map(float, labels7[i].strip().split(',')))).argmax()
+#     y230 = np.array(list(map(float, labels230[i].strip().split(',')))).argmax()
+#     np.save(f'Data/Generated/XRDs_RRUFF/{i}', {'features': x, 'labels7': y7, 'labels230': y230})

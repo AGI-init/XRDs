@@ -1,4 +1,5 @@
 import os.path
+import random
 import re
 import pandas as pd
 import numpy as np
@@ -10,7 +11,7 @@ from torch import as_tensor, multiprocessing as mp
 
 def download(save_path):
     os.makedirs(save_path, exist_ok=True)
-    downloaded = glob.glob(save_path + '*.cif')
+    downloaded = glob.glob(save_path.rstrip('/') + '*.cif')
 
     with open(os.path.dirname(__file__) + '/DOWNLOAD.txt', "r") as f:
         # Iterate through download destinations
@@ -745,41 +746,47 @@ def process_cif(cif_path, hkl_info=_hkl_info, x_step=0.01, peak_shapes=((0.05, -
 
     # Peak Shape Functions
 
-    # Set up x-axis and resolutions
+    # TODO Can output xy_merge and use PeakShapeTransform? Challenge for Aug: xy_merge shape varies.
+
+    # TODO Note: Manually setting peak shapes
+    peak_shapes = [(0.05, -0.06, 0.07), (0.05, -0.01, 0.01),
+                   (0.0, 0.0, 0.01), (0.0, 0.0, random.uniform(0.001, 0.1))]
 
     XRDs = []
 
-    for U, V, W in peak_shapes:
+    for peak_shape, (U, V, W) in enumerate(peak_shapes):
         H = np.zeros((xy_merge.shape[0], 1))
         H[:, 0] = (U * (np.tan(xy_merge[:, 0]*(np.pi/180)/2))**2 + V * np.tan(xy_merge[:, 0] * (np.pi/180)/2) + W)**(1/2)
-        step = x_step
-        total_points = int(180/step)
-        # Set up a x-y 1D data
-        #------------------------------------
-        # multiprocess of peak shape function
-        # pool = mp.Pool(8)
-        # pattern = pool.starmap(y_multi, [(x_val, step, xy_merge, H) for x_val in range (0, total_points)])
-        pattern = [y_multi(x_val, step, xy_merge, H) for x_val in range (0, total_points)]
-        # pool.close()
-        pattern2 = np.zeros((total_points,2))
-        pattern2[:, 1] = np.asarray(pattern)
-        pattern2[:, 0] = np.arange(0, 180, step)
 
-        # Normalization, leaving only 2 dicimal
+        total_points = int(180 / x_step)
+
+        pattern = [y_multi(x_val, x_step, xy_merge, H) for x_val in range (0, total_points)]
+        pattern2 = np.zeros((total_points, 2))
+        pattern2[:, 1] = np.asarray(pattern)
+        pattern2[:, 0] = np.arange(0, 180, x_step)
+
+        # Normalization, leaving only 2 decimal
         pattern2[:, 0] = pattern2[:, 0].round(decimals=3)
         pattern2[:, 1] = (pattern2[:, 1] / np.max(pattern2[:, 1])).round(decimals=3)
 
-        # Print the plot for preview
-        labels7 = int(crystal_system)
-        labels230 = int(space_group)
-        features = pattern2[500:9000, 1] * 1000
-        features = features.astype(int).reshape(1, -1)
+        # TODO Can remove this and use NoiseAug for small speedup + more variation; un-indent the second/third sub-block
+        for noise in range(2):
+            # Random noise augmentation
+            if noise and peak_shape != 2:  # Peak shape 2 represents a perfect crystal, so should not be augmented
+                pattern2[:, 1] += np.random.randint(2, 20, size=pattern2[:, 1].shape)
+                pattern2[:, 1] = np.around(pattern2[:, 1] * 1000, decimals=0)
 
-        if save_path:
-            os.makedirs(os.path.dirname(save_path), exist_ok=True)
-            np.save(save_path, {'features': features, 'labels7': labels7, 'labels230': labels230})
+            labels7 = int(crystal_system)
+            labels230 = int(space_group)
+            features = pattern2[500:9000, 1] * 1000
+            features = features.astype(int).reshape(1, -1)
 
-        XRDs.append((features, labels7, labels230))
+            if save_path:
+                save_path += f'_{peak_shape}_{noise}'
+                os.makedirs(os.path.dirname(save_path), exist_ok=True)
+                np.save(save_path, {'features': features, 'labels7': labels7, 'labels230': labels230})
+
+            XRDs.append((features, labels7, labels230))
     return XRDs
 
 
@@ -798,19 +805,22 @@ def generate(in_dir=None):
     if in_dir is None:
         in_dir = path + '/CIFs_open_access'
 
-    name = in_dir.strip('/').split('/')[-1]
+    name = in_dir.rstrip('/').split('/')[-1].replace('CIFs_', '')
 
     num_workers = os.cpu_count()
 
-    for cif_path, _, files in os.walk(in_dir):
-        with mp.Pool(num_workers) as pool:
-            list(tqdm(pool.imap_unordered(star,
-                                          [dict(cif_path=f'{cif_path}/{file}',
-                                                save_path=f'{root}Generated/XRDs_{name}/{file.rsplit(".", 1)[0]}')
-                                           for file in files if file.endswith('.cif')
-                                           and not os.path.exists(f'{root}/Generated/XRDs_{name}/{file}')]),
-                      desc=f'Generating synthetic XRDs from crystal data in {path}. '
-                           f'This can take a moment. Using {num_workers} workers', total=len(files)))
+    files = glob.glob(in_dir.rstrip('/') + '/*.cif')
+    save_path = f'{root}Generated/XRDs_{name}/'
+
+    # Multiprocessing XRD data generation
+    with mp.Pool(num_workers) as pool:
+        list(tqdm(pool.imap_unordered(star,
+                                      [dict(cif_path=file,
+                                            save_path=f'{save_path}{os.path.basename(file).rsplit(".", 1)[0]}')
+                                       for file in files if file.endswith('.cif') and not
+                                       os.path.exists(f'{save_path}{os.path.basename(file).rsplit(".", 1)[0]}')]),
+                  desc=f'Generating synthetic XRDs from crystal data in {path}. '
+                       f'This can take a moment. Using {num_workers} workers', total=len(files)))
 
 
 if __name__ == '__main__':
