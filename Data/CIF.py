@@ -541,7 +541,7 @@ def process_cif(cif_path, hkl_info=_hkl_info, x_step=0.01, save_path=None):
         elif chem_dict.get(symm_atom_type) == None:
             return "Failed: Can not match neutrual atom type"
         # Then we update [:, 0] if ion label exists and REPLACE NEUTRAL atom index with ION index
-        if True and ion_label_line_judge and re.fullmatch('([A-z]+)([1-9]+[+-]+)', line.split()[ion_label_line - atom_loop_line - 1]) != None and chem_dict.get(line.split()[ion_label_line - atom_loop_line - 1].strip()) != None:
+        if ion_label_line_judge and re.fullmatch('([A-z]+)([1-9]+[+-]+)', line.split()[ion_label_line - atom_loop_line - 1]) != None and chem_dict.get(line.split()[ion_label_line - atom_loop_line - 1].strip()) != None:
             symm_atom_info[count_symm_atom, 0] = int(chem_dict.get(line.split()[ion_label_line - atom_loop_line - 1].strip()))
         # Here we define a estimated cell total number of atom. To filter out cases with too many to save time.
 
