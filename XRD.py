@@ -126,7 +126,7 @@ class XRD(Dataset):
 
         # Load data from hard disk
         data = np.load(self.data[root][idx], allow_pickle=True).item()
-        x, y = data['features'], data['labels7' if self.num_classes == 7 else 'labels230'] - 1
+        x, y = data['features'], data['labels7' if self.num_classes == 7 else 'labels230']
 
         return x, y
 

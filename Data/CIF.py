@@ -777,8 +777,8 @@ def process_cif(cif_path, hkl_info=_hkl_info, x_step=0.01, save_path=None):
                 pattern2[:, 1] += np.random.randint(2, 20, size=pattern2[:, 1].shape)
                 pattern2[:, 1] = np.around(pattern2[:, 1] * 1000, decimals=0)
 
-            labels7 = int(crystal_system)
-            labels230 = int(space_group)
+            labels7 = int(crystal_system) - 1
+            labels230 = int(space_group) - 1
             features = pattern2[500:9000, 1] * 1000
             features = features.astype(int).reshape(1, -1)
 
