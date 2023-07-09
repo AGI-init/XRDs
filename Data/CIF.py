@@ -1,3 +1,5 @@
+# This source code is licensed under the MIT license found in the
+# MIT_LICENSE file in the root directory of this source tree.
 import os.path
 import random
 import re
@@ -464,8 +466,6 @@ def process_cif(cif_path, hkl_info=_hkl_info, x_step=0.01, save_path=None):
         if atom_end_blank_judge and not comment_judge:
             atom_end_line = line_count
 
-        # print(atom_start_line, atom_end_line)
-
         # 3. SYMM
 
         # Find "_space_group_symop_operation_xyz" or "_symmetry_equiv_pos_as_xyz"
@@ -665,12 +665,7 @@ def process_cif(cif_path, hkl_info=_hkl_info, x_step=0.01, save_path=None):
     two_theta[:, 0] = hkl_2theta[:, 4]
     two_theta_pi[:, 0] = hkl_2theta[:, 5]
     # After two_theta, we calculate lorentz-polarization factor.
-    # lp = np.zeros((hkl_2theta.shape[0], 1))
-    # for i in range (0, hkl_2theta.shape[0]):
-    #     lp[i] = (1 + np.cos(two_theta_pi[i])**2) / (np.cos(two_theta_pi[i]/2)*np.sin(two_theta_pi[i]/2)**2)
     lp = (1 + np.cos(two_theta_pi)**2) / (np.cos(two_theta_pi/2)*np.sin(two_theta_pi/2)**2)
-    # print(lp_another-lp)
-    # exit()
     # STRUCTURE FACTOR
     # Next, vector product of h * x_j.
     hkl_pos = np.matmul(hkl_info[:, [0, 1, 2]], cell_info[:, [2, 3, 4]].T)
@@ -701,12 +696,12 @@ def process_cif(cif_path, hkl_info=_hkl_info, x_step=0.01, save_path=None):
     # For ion: International Tables for Crystallography (2006). Vol. C. ch. 6.1, pp. 554-590
     # https://it.iucr.org/Cb/ch6o1v0001/sec6o1o1/
     atom_scat = np.zeros((hkl_info.shape[0], cell_info.shape[0]))
-    # i is the sequense of atoms
+    # i is the sequence of atoms
     for i in range (0, cell_info.shape[0]):
         col = np.zeros((hkl_info.shape[0], 1))
         abc_ion = np.zeros((9, 1))
         abc_ion[0:9, 0] = np.array(scat_table_lines[int(cell_info[i, 0]) - 1].split()[3:12])
-        # j is the appraoch for integration
+        # j is the approach for integration
         for j in range (0, 7, 2):
             col[:, 0] = col[:, 0] + abc_ion[j, 0] * np.exp(- abc_ion[j+1, 0] * s[:, 0]**2)
         col[:, 0] = (col[:, 0] + abc_ion[8]) * cell_info[i, 5]
