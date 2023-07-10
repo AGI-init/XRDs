@@ -136,7 +136,9 @@ year    = {2023}
 
 ---
 
+<a href="http://www.github.com/AGI-init/UnifiedML" target="_blank">
 <img width="15%" alt="flowchart" src="https://i.imgur.com/Ya9FpIJ.png">
+</a>
 
 All **[UnifiedML](https://github.com/AGI-init/UnifiedML)** features and syntax are supported.
 

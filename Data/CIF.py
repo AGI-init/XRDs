@@ -117,8 +117,8 @@ def hkl(hkl_max=10, hkl_path=None):
     hkl_exp2 = hkl_redu[0, :]
     for i in range(1, hkl_redu.shape[0]):
         # 1st case: 2 0s
-        if hkl_redu[i, 0]*hkl_redu[i, 1] == 0 and hkl_redu[i, 0]*hkl_redu[i, 2] == 0 \
-                and hkl_redu[i, 1]*hkl_redu[i, 2] == 0:
+        if hkl_redu[i, 0] * hkl_redu[i, 1] == 0 and hkl_redu[i, 0] * hkl_redu[i, 2] == 0 \
+                and hkl_redu[i, 1] * hkl_redu[i, 2] == 0:
             hkl_exp2 = np.vstack([hkl_exp2, hkl_redu[i, :]])
         # 2nd case: 1 0s
         elif hkl_redu[i, 0] == 0 or hkl_redu[i, 2] == 0 or hkl_redu[i, 1] == 0:
@@ -157,8 +157,8 @@ def hkl(hkl_max=10, hkl_path=None):
             hkl_exp2 = np.vstack([hkl_exp2, hkl_none0_3[0, :]])
 
     # Then we calculate the multiplicity of each hkl planes. The rules are simply, no 0 -> 4, one 0 -> 2, two 0 -> 1
-    hkl_multi = np.zeros(( hkl_exp2.shape[0], 1))
-    for i in range(0,  hkl_exp2.shape[0]):
+    hkl_multi = np.zeros((hkl_exp2.shape[0], 1))
+    for i in range(0, hkl_exp2.shape[0]):
         if hkl_exp2[i, 0] != 0 and hkl_exp2[i, 1] != 0 and hkl_exp2[i, 2] != 0:
             hkl_multi[i] = 1
         elif hkl_exp2[i, 0] * hkl_exp2[i, 1] == 0 and hkl_exp2[i, 0] * hkl_exp2[i, 2] == 0 \
@@ -253,10 +253,9 @@ if os.path.exists(hkl_path):
     _hkl_info = as_tensor(np.load(hkl_path)).share_memory_()
 else:
     print('Computing hkl matrix...', end=" ")
-    _hkl_info = as_tensor(hkl(hkl_max, hkl_path))
+    _hkl_info = as_tensor(hkl(hkl_max, hkl_path)).share_memory_()
 if mp.current_process().name == 'MainProcess':
     print('- Done ✓')
-
 
 # Create a dictionary mapping space group to crystal structure.
 space_group_map_dict = {}
@@ -275,6 +274,10 @@ for i in range(168, 195):
 for i in range(195, 231):
     space_group_map_dict[i] = 7
 
+# Open tables for ion scattering data.
+with open(os.path.dirname(__file__) + '/ION_SCATTERING_TABLE.txt', 'r') as scat_table:
+    scat_table_lines = scat_table.readlines()
+
 
 def process_cif(cif_path, hkl_info=_hkl_info, x_step=0.01, save_path=None):
     """To load and extract a CIF file, we need:
@@ -288,9 +291,6 @@ def process_cif(cif_path, hkl_info=_hkl_info, x_step=0.01, save_path=None):
     with open(cif_path, 'r', encoding='UTF-8') as cif_content:
         cif_content_lines = cif_content.readlines()
 
-    # Open tables for ion scattering data.
-    with open(os.path.dirname(__file__) + '/ION_SCATTERING_TABLE.txt', 'r') as scat_table:
-        scat_table_lines = scat_table.readlines()
     # And create a dictionary using this file to log ions with its idx.
     chem_dict = {}
     for line in scat_table_lines:
@@ -541,8 +541,11 @@ def process_cif(cif_path, hkl_info=_hkl_info, x_step=0.01, save_path=None):
         elif chem_dict.get(symm_atom_type) == None:
             return "Failed: Can not match neutrual atom type"
         # Then we update [:, 0] if ion label exists and REPLACE NEUTRAL atom index with ION index
-        if ion_label_line_judge and re.fullmatch('([A-z]+)([1-9]+[+-]+)', line.split()[ion_label_line - atom_loop_line - 1]) != None and chem_dict.get(line.split()[ion_label_line - atom_loop_line - 1].strip()) != None:
-            symm_atom_info[count_symm_atom, 0] = int(chem_dict.get(line.split()[ion_label_line - atom_loop_line - 1].strip()))
+        if ion_label_line_judge and re.fullmatch('([A-z]+)([1-9]+[+-]+)', line.split()[
+            ion_label_line - atom_loop_line - 1]) != None and chem_dict.get(
+                line.split()[ion_label_line - atom_loop_line - 1].strip()) != None:
+            symm_atom_info[count_symm_atom, 0] = int(
+                chem_dict.get(line.split()[ion_label_line - atom_loop_line - 1].strip()))
         # Here we define a estimated cell total number of atom. To filter out cases with too many to save time.
 
     # 2. SYMM
@@ -573,8 +576,8 @@ def process_cif(cif_path, hkl_info=_hkl_info, x_step=0.01, save_path=None):
     # 4. Reduce identical atoms.
     translatedCell = np.zeros((0, 6))
     translatedAtom = np.zeros((1, 6))
-    for i in range (0, lattice_atom_info_redu.shape[0]):
-        for j in range (2, 5):
+    for i in range(0, lattice_atom_info_redu.shape[0]):
+        for j in range(2, 5):
             if lattice_atom_info_redu[i, j] < 0:
                 translatedAtom[0, j] = lattice_atom_info_redu[i, j] + 1
             elif lattice_atom_info_redu[i, j] > 1:
@@ -591,34 +594,35 @@ def process_cif(cif_path, hkl_info=_hkl_info, x_step=0.01, save_path=None):
 
     # 3.
     roundedCell = np.zeros((0, 6))
-    for i in range (0, reducedCell.shape[0]):
+    for i in range(0, reducedCell.shape[0]):
         zeroCount = np.sum((reducedCell[i, 2:5] <= 0.02) | (reducedCell[i, 2:5] >= 0.98))
         if zeroCount == 0:
             roundedCell = np.vstack([roundedCell, reducedCell[i, :]])
         elif zeroCount == 1:
-            for j in range (2, 5):
+            for j in range(2, 5):
                 if reducedCell[i, j] <= 0.02 or reducedCell[i, j] >= 0.98:
-                    roundedAtom = np.array([reducedCell[i, :]]*2)
+                    roundedAtom = np.array([reducedCell[i, :]] * 2)
                     roundedAtom[:, j] = np.array([0, 1]).T
                     roundedCell = np.vstack([roundedCell, roundedAtom])
 
         elif zeroCount == 2:
             j1 = 0
             j2 = 0
-            for j in range (2, 5):
+            for j in range(2, 5):
                 if reducedCell[i, j] <= 0.05 or reducedCell[i, j] >= 0.95:
                     if j1 == 0:
                         j1 = j
                     else:
                         j2 = j
-            roundedAtom = np.array([reducedCell[i, :]]*4)
+            roundedAtom = np.array([reducedCell[i, :]] * 4)
             roundedAtom[:, [j1, j2]] = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
             roundedCell = np.vstack([roundedCell, roundedAtom])
         elif zeroCount == 3:
-            roundedAtom = np.array([reducedCell[i, :]]*8)
-            roundedAtom[:, [2, 3, 4]] = np.array([[0,0,0],[0,0,1],[0,1,0],[0,1,1],[1,0,0],[1,0,1],[1,1,0],[1,1,1]])
+            roundedAtom = np.array([reducedCell[i, :]] * 8)
+            roundedAtom[:, [2, 3, 4]] = np.array(
+                [[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 1], [1, 0, 0], [1, 0, 1], [1, 1, 0], [1, 1, 1]])
             roundedCell = np.vstack([roundedCell, roundedAtom])
-    #4.
+    # 4.
     reducedCell = np.unique(roundedCell, axis=0)
     cell_info = np.around(reducedCell, decimals=2)
     # CAL PEAK
@@ -634,21 +638,27 @@ def process_cif(cif_path, hkl_info=_hkl_info, x_step=0.01, save_path=None):
     alpha = cell_alpha
     beta = cell_beta
     gamma = cell_gamma
-    v = (a*b*c) * (1 + 2*np.cos(alpha)*np.cos(beta)*np.cos(gamma) - np.cos(alpha)**2 - np.cos(beta)**2 - np.cos(gamma)**2 )**(1/2)
-    hkl_d = (1/v) * (hkl_h**2*b**2*c**2*np.sin(alpha)**2 + hkl_k**2*a**2*c**2*np.sin(beta)**2 + hkl_l**2*a**2*b**2*np.sin(gamma)**2 + 2*hkl_h*hkl_k*a*b*c**2*(np.cos(alpha)*np.cos(beta)-np.cos(gamma)) + 2*hkl_k*hkl_l*a**2*b*c*(np.cos(beta)*np.cos(gamma)-np.cos(alpha)) + 2*hkl_h*hkl_l*a*b**2*c*(np.cos(alpha)*np.cos(gamma)-np.cos(beta)))**(1/2)
-    hkl_d = 1/hkl_d
+    v = (a * b * c) * (
+                1 + 2 * np.cos(alpha) * np.cos(beta) * np.cos(gamma) - np.cos(alpha) ** 2 - np.cos(beta) ** 2 - np.cos(
+            gamma) ** 2) ** (1 / 2)
+    hkl_d = (1 / v) * (hkl_h ** 2 * b ** 2 * c ** 2 * np.sin(alpha) ** 2 + hkl_k ** 2 * a ** 2 * c ** 2 * np.sin(
+        beta) ** 2 + hkl_l ** 2 * a ** 2 * b ** 2 * np.sin(gamma) ** 2 + 2 * hkl_h * hkl_k * a * b * c ** 2 * (
+                                   np.cos(alpha) * np.cos(beta) - np.cos(
+                               gamma)) + 2 * hkl_k * hkl_l * a ** 2 * b * c * (np.cos(beta) * np.cos(gamma) - np.cos(
+        alpha)) + 2 * hkl_h * hkl_l * a * b ** 2 * c * (np.cos(alpha) * np.cos(gamma) - np.cos(beta))) ** (1 / 2)
+    hkl_d = 1 / hkl_d
     # Then calculate two_theta.
     wavelength = 1.5418
     two_theta = np.zeros((hkl_info.shape[0], 1))
     two_theta_pi = np.zeros((hkl_info.shape[0], 1))
-    for i in range (0, hkl_info.shape[0]):
+    for i in range(0, hkl_info.shape[0]):
         if wavelength / 2 / hkl_d[i] < 1:
             theta_cal = np.arcsin(wavelength / 2 / hkl_d[i])
             # Here we have the options to add 2theta_errors
             theta_err = 0
             theta_obs = theta_cal + theta_err
-            two_theta[i] = 2*theta_obs/np.pi*180
-            two_theta_pi[i] = 2*theta_obs
+            two_theta[i] = 2 * theta_obs / np.pi * 180
+            two_theta_pi[i] = 2 * theta_obs
     two_theta = np.around(two_theta, decimals=2)
     # Here before hkl matrix is passed on, we delete those hkls, with 0 as 2 theta.
     # hkl_2theta is a n*5 array.
@@ -665,7 +675,7 @@ def process_cif(cif_path, hkl_info=_hkl_info, x_step=0.01, save_path=None):
     two_theta[:, 0] = hkl_2theta[:, 4]
     two_theta_pi[:, 0] = hkl_2theta[:, 5]
     # After two_theta, we calculate lorentz-polarization factor.
-    lp = (1 + np.cos(two_theta_pi)**2) / (np.cos(two_theta_pi/2)*np.sin(two_theta_pi/2)**2)
+    lp = (1 + np.cos(two_theta_pi) ** 2) / (np.cos(two_theta_pi / 2) * np.sin(two_theta_pi / 2) ** 2)
     # STRUCTURE FACTOR
     # Next, vector product of h * x_j.
     hkl_pos = np.matmul(hkl_info[:, [0, 1, 2]], cell_info[:, [2, 3, 4]].T)
@@ -679,15 +689,15 @@ def process_cif(cif_path, hkl_info=_hkl_info, x_step=0.01, save_path=None):
         if count == 0:
             pos_pop[i, 0] = 1
         elif count == 1:
-            pos_pop[i, 0] = 1/2
+            pos_pop[i, 0] = 1 / 2
         elif count == 2:
-            pos_pop[i, 0] = 1/4
+            pos_pop[i, 0] = 1 / 4
         elif count == 3:
-            pos_pop[i, 0] = 1/8
+            pos_pop[i, 0] = 1 / 8
 
     # Next, temperature factor, we use the simplest equation. b ranges from 0.5-1 or 1-3.
     # s = np.zeros((two_theta_pi.shape[0], 1))
-    s = np.sin(two_theta_pi/2) / wavelength
+    s = np.sin(two_theta_pi / 2) / wavelength
 
     ### ATOM SCATTERING FACTOR
     # Next, atmoic scattering factor.
@@ -697,13 +707,13 @@ def process_cif(cif_path, hkl_info=_hkl_info, x_step=0.01, save_path=None):
     # https://it.iucr.org/Cb/ch6o1v0001/sec6o1o1/
     atom_scat = np.zeros((hkl_info.shape[0], cell_info.shape[0]))
     # i is the sequence of atoms
-    for i in range (0, cell_info.shape[0]):
+    for i in range(0, cell_info.shape[0]):
         col = np.zeros((hkl_info.shape[0], 1))
         abc_ion = np.zeros((9, 1))
         abc_ion[0:9, 0] = np.array(scat_table_lines[int(cell_info[i, 0]) - 1].split()[3:12])
         # j is the approach for integration
-        for j in range (0, 7, 2):
-            col[:, 0] = col[:, 0] + abc_ion[j, 0] * np.exp(- abc_ion[j+1, 0] * s[:, 0]**2)
+        for j in range(0, 7, 2):
+            col[:, 0] = col[:, 0] + abc_ion[j, 0] * np.exp(- abc_ion[j + 1, 0] * s[:, 0] ** 2)
         col[:, 0] = (col[:, 0] + abc_ion[8]) * cell_info[i, 5]
         # Then multiply by occupancy
         # col[:, 0] = col[:, 0] * cell_info[i, 5]
@@ -751,7 +761,8 @@ def process_cif(cif_path, hkl_info=_hkl_info, x_step=0.01, save_path=None):
 
     for peak_shape, (U, V, W) in enumerate(peak_shapes):
         H = np.zeros((xy_merge.shape[0], 1))
-        H[:, 0] = (U * (np.tan(xy_merge[:, 0]*(np.pi/180)/2))**2 + V * np.tan(xy_merge[:, 0] * (np.pi/180)/2) + W)**(1/2)
+        H[:, 0] = (U * (np.tan(xy_merge[:, 0] * (np.pi / 180) / 2)) ** 2 + V * np.tan(
+            xy_merge[:, 0] * (np.pi / 180) / 2) + W) ** (1 / 2)
 
         total_points = int(180 / x_step)
 
@@ -804,7 +815,7 @@ def generate(in_dir=None):
 
     name = in_dir.rstrip('/').split('/')[-1].replace('CIFs_', '')
 
-    num_workers = min(os.cpu_count(), 70)
+    num_workers = os.cpu_count()
 
     files = glob.glob(in_dir.rstrip('/') + '/*.cif')
     save_path = f'{root}Generated/XRDs_{name}/'
