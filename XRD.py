@@ -128,7 +128,7 @@ class XRD(Dataset):
         data = np.load(self.data[root][idx], allow_pickle=True).item()
         x, y = data['features'], data['labels7' if self.num_classes == 7 else 'labels230']
 
-        return x.astype(np.float32), int(y)
+        return x, y
 
 
 # Verify or download data

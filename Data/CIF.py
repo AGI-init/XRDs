@@ -780,8 +780,8 @@ def process_cif(cif_path, hkl_info=_hkl_info, x_step=0.01, save_path=None):
         for noise in range(2):
             # Random noise augmentation
             if noise and peak_shape != 2:  # Peak shape 2 represents a perfect crystal, so should not be augmented
-                pattern2[:, 1] += np.random.randint(2, 20, size=pattern2[:, 1].shape)
                 pattern2[:, 1] = np.around(pattern2[:, 1] * 1000, decimals=0)
+                pattern2[:, 1] += np.random.randint(2, 20, size=pattern2[:, 1].shape)
 
             labels7 = int(crystal_system) - 1
             labels230 = int(space_group) - 1
