@@ -1,7 +1,3 @@
-imports:
-  - classify/custom  # Classification: UnifiedML/Hyperparams/task/classify/custom
-  - self
-
 Dataset: XRD.XRD
 
 num_classes: 7
