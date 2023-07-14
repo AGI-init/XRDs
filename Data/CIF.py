@@ -777,25 +777,25 @@ def process_cif(cif_path, hkl_info=_hkl_info, x_step=0.01, save_path=None):
         pattern2[:, 1] = (pattern2[:, 1] / np.max(pattern2[:, 1])).round(decimals=3)
 
         # TODO Can remove this and use NoiseAug for small speedup + more variation; un-indent the second/third sub-block
-        # for noise in range(2):
-        #     # Random noise augmentation
-        #     if noise and peak_shape != 2:  # Peak shape 2 represents a perfect crystal, so should not be augmented
-        #         pattern2[:, 1] = np.around(pattern2[:, 1] * 1000, decimals=0)
-        #         pattern2[:, 1] += np.random.randint(2, 20, size=pattern2[:, 1].shape)
+        for noise in range(2):
+            # Random noise augmentation
+            if noise and peak_shape != 2:  # Peak shape 2 represents a perfect crystal, so should not be augmented
+                pattern2[:, 1] = np.around(pattern2[:, 1] * 1000, decimals=0)
+                pattern2[:, 1] += np.random.randint(2, 20, size=pattern2[:, 1].shape)
 
-        labels7 = int(crystal_system) - 1
-        labels230 = int(space_group) - 1
-        features = pattern2[500:9000, 1] * 1000
-        features = features.astype(int).reshape(1, -1)
+            labels7 = int(crystal_system) - 1
+            labels230 = int(space_group) - 1
+            features = pattern2[500:9000, 1] * 1000
+            features = features.astype(int).reshape(1, -1)
 
-        if save_path:
-                # name = save_path + f'_{peak_shape}_{noise}'
-                name = save_path + f'_{peak_shape}'
+            if save_path:
+                name = save_path + f'_{peak_shape}_{noise}'
+                # name = save_path + f'_{peak_shape}'
                 os.makedirs(os.path.dirname(name), exist_ok=True)
                 np.save(name, {'features': features, 'labels7': labels7, 'labels230': labels230})
 
-        XRDs.append((features, labels7, labels230))
-            # XRDs.append((features, labels7, labels230))
+        # XRDs.append((features, labels7, labels230))
+            XRDs.append((features, labels7, labels230))
     if not save_path:
         return XRDs
 

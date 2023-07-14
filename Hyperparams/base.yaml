@@ -17,7 +17,7 @@ dataset:
   rruff: ${rruff}
   soup: ${soup}
 
-Aug: XRD.NoiseAug
+Aug: Identity
 Eyes: Identity
 Trunk: Identity
 Predictor: Identity
