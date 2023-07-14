@@ -783,7 +783,7 @@ def process_cif(cif_path, hkl_info=_hkl_info, x_step=0.01, save_path=None):
             # Random noise augmentation
             if peak_shape != 2:  # Peak shape 2 represents a perfect crystal, so should not be augmented
                 # pattern2[:, 1] = np.around(pattern2[:, 1] * 1000, decimals=0)
-                features = pattern2 + np.random.randint(2, 20, size=pattern2[:, 1].shape)
+                features = pattern2 + np.random.randint(2, 20, size=pattern2.shape)
             else:
                 features = pattern2
 
