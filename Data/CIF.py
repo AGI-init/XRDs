@@ -797,11 +797,12 @@ def process_cif(cif_path, hkl_info=_hkl_info, x_step=0.01, save_path=None):
                 os.makedirs(os.path.dirname(name), exist_ok=True)
                 np.save(name, {'features': features, 'labels7': labels7, 'labels230': labels230})
 
+            XRDs.append((features, labels7, labels230))
+
             if peak_shape == 2:
                 break
 
         # XRDs.append((features, labels7, labels230))
-            XRDs.append((features, labels7, labels230))
     if not save_path:
         return XRDs
 
