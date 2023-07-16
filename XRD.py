@@ -6,7 +6,6 @@ import random
 
 import numpy as np
 
-import torch
 from torch import nn
 from torch.utils.data import Dataset
 
@@ -179,6 +178,7 @@ if __name__ == '__main__':
 """
 Below are in-progress experiments
 """
+import torch
 
 
 # Moving noise augmentation to batch-vectorized GPU
@@ -239,18 +239,19 @@ class PeakShapeTransform:
         return x
 
 
-# Generate RRUFF from original format:
-
-# os.makedirs('Data/Generated/XRDs_RRUFF/', exist_ok=True)
+# Generate ICSD from original format:
 #
-# with open('Data_old/Generated/XRDs_RRUFF/features.csv', "r") as f:
+# os.makedirs('/gpfs/fs2/scratch/public/jsalgad2/Data/Generated/XRDs_ICSD/', exist_ok=True)
+#
+# with open('/gpfs/fs2/scratch/public/jsalgad2/icsd1.2m_large/features.csv', "r") as f:
 #     features = f.readlines()
-# with open('Data_old/Generated/XRDs_RRUFF/labels7.csv', "r") as f:
+# with open('/gpfs/fs2/scratch/public/jsalgad2/icsd1.2m_large/labels7.csv', "r") as f:
 #     labels7 = f.readlines()
-# with open('Data_old/Generated/XRDs_RRUFF/labels230.csv', "r") as f:
+# with open('/gpfs/fs2/scratch/public/jsalgad2/icsd1.2m_large/labels230.csv', "r") as f:
 #     labels230 = f.readlines()
 # for i, features in enumerate(features):
 #     x = torch.FloatTensor(list(map(float, features.strip().split(',')))).view(1, 8500).numpy()
 #     y7 = np.array(list(map(float, labels7[i].strip().split(',')))).argmax()
 #     y230 = np.array(list(map(float, labels230[i].strip().split(',')))).argmax()
-#     np.save(f'Data/Generated/XRDs_RRUFF/{i}', {'features': x, 'labels7': y7, 'labels230': y230})
+#     np.save(f'/gpfs/fs2/scratch/public/jsalgad2/Data/Generated/XRDs_ICSD/{i}',
+#             {'features': x, 'labels7': y7, 'labels230': y230})
