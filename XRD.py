@@ -148,7 +148,7 @@ def data_paths(icsd, open_access, rruff, soup):
 
     if icsd:
         if os.path.exists(path + '/Data/Generated/XRDs_ICSD/') or os.path.exists(path + '/Data/Generated/CIFs_ICSD/'):
-            if len(glob.glob(path + '/Data/Generated/XRDs_ICSD/*.npy')) < 171e3:  # Approximate length check
+            if len(glob.glob(path + '/Data/Generated/XRDs_ICSD/*.npy')) < 171e3 * 7:  # Approximate length check
                 from Data.CIF import generate
                 with Lock(path + '/Data/Generated/CIFs_ICSD/Lock'):  # System-wide lock
                     generate(path + '/Data/Generated/CIFs_ICSD/')  # Generate data
@@ -187,18 +187,7 @@ class NoiseAug:
         return torch.relu(torch.normal(mean=x, std=20))
 
 
-"""
-TODO
- 1. What is the shape of xy_merge in data generation? - Answer: It varies (variable length x 2)
- 2. Can this "y_multi" loop be optimized / batch vectorized? - Answer: Yes!
-    - Either manually batch vectorizing
-    - Or JIT
- ---
- Conclusion: NoiseAug can be batch-vectorized and moved to GPU, peak shapes can be sped up but remain on CPU.
- """
-
-
-# Peak shape and random noise transform
+# Peak shape and random noise transform at runtime
 class PeakShapeTransform:
     def __init__(self, peak_shapes=(0, 1, 2, 3), noise=True, x_step=0.01):
         self.peak_shapes = peak_shapes
@@ -237,21 +226,3 @@ class PeakShapeTransform:
             x = torch.relu(torch.normal(mean=x, std=20))
 
         return x
-
-
-# Generate ICSD from original format:
-#
-# os.makedirs('/gpfs/fs2/scratch/public/jsalgad2/Data/Generated/XRDs_ICSD/', exist_ok=True)
-#
-# with open('/gpfs/fs2/scratch/public/jsalgad2/icsd1.2m_large/features.csv', "r") as f:
-#     features = f.readlines()
-# with open('/gpfs/fs2/scratch/public/jsalgad2/icsd1.2m_large/labels7.csv', "r") as f:
-#     labels7 = f.readlines()
-# with open('/gpfs/fs2/scratch/public/jsalgad2/icsd1.2m_large/labels230.csv', "r") as f:
-#     labels230 = f.readlines()
-# for i, features in enumerate(features):
-#     x = torch.FloatTensor(list(map(float, features.strip().split(',')))).view(1, 8500).numpy()
-#     y7 = np.array(list(map(float, labels7[i].strip().split(',')))).argmax()
-#     y230 = np.array(list(map(float, labels230[i].strip().split(',')))).argmax()
-#     np.save(f'/gpfs/fs2/scratch/public/jsalgad2/Data/Generated/XRDs_ICSD/{i}',
-#             {'features': x, 'labels7': y7, 'labels230': y230})
