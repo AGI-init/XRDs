@@ -22,6 +22,7 @@ Eyes: Identity
 Trunk: Identity
 Predictor: Identity
 
+stream: true
 standardize: false
 norm: true
 

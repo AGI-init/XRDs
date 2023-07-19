@@ -28,7 +28,7 @@ This project is built with the **[UnifiedML](https://github.com/AGI-init/Unified
 pip install UnifiedML
 ```
 
-If you're on Linux, you must first manually install Pytorch: ```pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu```.
+If you're on Linux, you must first manually install [Pytorch + CUDA via pip](https://pytorch.org/get-started/locally/) e.g. ```pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118```.
 
 ---
 
