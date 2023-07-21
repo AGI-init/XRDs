@@ -23,8 +23,6 @@ Trunk: Identity
 Predictor: Identity
 
 stream: true
-standardize: false
-norm: false
 
 task_name: ${dataset.num_classes}-Way
 

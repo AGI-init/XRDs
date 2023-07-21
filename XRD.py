@@ -187,15 +187,21 @@ class NoiseAug:
         return torch.relu(torch.normal(mean=x, std=20))
 
 
+# TODO Can make into one pipeline by defining __len__ as actual len * number of peak shapes, and indexing per interval
+#   Maybe Dataset can have its own progress bar description attr
+#   xy_merges can still be saved a priori to avoid regenerating when extending or modifying
 # Peak shape and random noise transform at runtime
 class PeakShapeTransform:
-    def __init__(self, peak_shapes=(0, 1, 2, 3), noise=True, x_step=0.01):
+    def __init__(self, peak_shapes=(0, 1, 2, 3), noise=True, x_step=0.01, seed=0):
+        random.seed(seed)
+
         self.peak_shapes = peak_shapes
         self.noise = noise
 
         self.x_step = x_step
 
     def __call__(self, xy_merge):
+        # TODO Can include "perfect" crystal, otherwise define variations. index=0 as arg from Dataset
         peak_shapes = [(0.05, -0.06, 0.07), (0.05, -0.01, 0.01),
                        (0.0, 0.0, 0.01), (0.0, 0.0, random.uniform(0.001, 0.1))]
 
