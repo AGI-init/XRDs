@@ -93,7 +93,7 @@ class XRD(Dataset):
         self.num_classes = num_classes
 
         if sources is None or train_eval_splits is None:
-            roots, train_eval_splits = data_paths(icsd, open_access, rruff, soup)
+            roots, train_eval_splits = data_paths(icsd, open_access, rruff, soup, train)
         else:
             roots = [glob.glob(source.rstrip('/') + '/*.npy') for source in sources]
 
@@ -131,13 +131,13 @@ class XRD(Dataset):
 
 
 # Verify or download data
-def data_paths(icsd, open_access, rruff, soup):
+def data_paths(icsd, open_access, rruff, soup, train):
     roots = []
     train_eval_splits = []
 
     path = os.path.dirname(__file__)
 
-    if rruff:
+    if rruff and (not train or soup):
         if os.path.exists(path + '/Data/Generated/XRDs_RRUFF/'):
             roots.append(glob.glob(path + '/Data/Generated/XRDs_RRUFF/*.npy'))
             train_eval_splits += [0.5 if soup else 0]  # Split 50% of experimental RRUFF data just for training
@@ -146,7 +146,7 @@ def data_paths(icsd, open_access, rruff, soup):
             print('Could not find RRUFF XRD files. Skipping souping and evaluating on '
                   '10% held-out portion of synthetic data.')
 
-    if icsd:
+    if icsd and (train or not rruff):
         if os.path.exists(path + '/Data/Generated/XRDs_ICSD/') or os.path.exists(path + '/Data/Generated/CIFs_ICSD/'):
             if len(glob.glob(path + '/Data/Generated/XRDs_ICSD/*.npy')) < 171e3 * 7:  # Approximate length check
                 from Data.CIF import generate
@@ -158,7 +158,7 @@ def data_paths(icsd, open_access, rruff, soup):
             icsd = False
             print('Could not find ICSD CIF files. Using open-access CIFs instead.')
 
-    if open_access or not icsd:
+    if (open_access or not icsd) and (train or not rruff):
         if len(glob.glob(path + '/Data/Generated/XRDs_open_access/*.npy')) < 8e3 * 7:  # Approximate length check
             with Lock(path + '/Data/Generated/CIFs_open_access/Lock'):  # System-wide lock
                 from Data.CIF import generate, download

@@ -772,7 +772,7 @@ def process_cif(cif_path, hkl_info=_hkl_info, x_step=0.01, save_path=None):
         pattern2[:, 1] = np.asarray(pattern)
         pattern2[:, 0] = np.arange(0, 180, x_step)
 
-        # Normalization, rounding  Note: Somewhat redundant with the scaling in the below NoiseAug
+        # Normalization, rounding  TODO Don't round or norm here (Note that RRUFF would have to be re-scaled then)
         pattern2[:, 0] = pattern2[:, 0].round(decimals=3)
         pattern2[:, 1] = (pattern2[:, 1] / np.max(pattern2[:, 1])).round(decimals=3)
 
