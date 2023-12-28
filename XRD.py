@@ -9,7 +9,7 @@ import numpy as np
 from torch import nn
 from torch.utils.data import Dataset
 
-from ML import main
+from ML import ml
 from ML.World.Dataset import Lock
 
 
@@ -159,7 +159,7 @@ def data_paths(icsd, open_access, rruff, soup, train):
             print('Could not find ICSD CIF files. Using open-access CIFs instead.')
 
     if (open_access or not icsd) and (train or not rruff):
-        if len(glob.glob(path + '/Data/Generated/XRDs_open_access/*.npy')) < 8e3 * 7:  # Approximate length check
+        if len(glob.glob(path + '/Data/Generated/XRDs_open_access/*.npy')) < 7e3 * 7:  # Approximate length check
             with Lock(path + '/Data/Generated/CIFs_open_access/Lock'):  # System-wide lock
                 from Data.CIF import generate, download
                 if len(glob.glob(path + '/Data/Generated/CIFs_open_access/*.cif')) < 8e3:  # Approximate length check
@@ -171,64 +171,4 @@ def data_paths(icsd, open_access, rruff, soup, train):
     return roots, train_eval_splits
 
 
-if __name__ == '__main__':
-    main(task='NPCNN')
-
-
-"""
-Below are in-progress experiments
-"""
-import torch
-
-
-# Moving noise augmentation to batch-vectorized GPU
-class NoiseAug:
-    def __call__(self, x):
-        return torch.relu(torch.normal(mean=x, std=20))
-
-
-# TODO Can make into one pipeline by defining __len__ as actual len * number of peak shapes, and indexing per interval
-#   Maybe Dataset can have its own progress bar description attr
-#   xy_merges can still be saved a priori to avoid regenerating when extending or modifying
-# Peak shape and random noise transform at runtime
-class PeakShapeTransform:
-    def __init__(self, peak_shapes=(0, 1, 2, 3), noise=True, x_step=0.01, seed=0):
-        random.seed(seed)
-
-        self.peak_shapes = peak_shapes
-        self.noise = noise
-
-        self.x_step = x_step
-
-    def __call__(self, xy_merge):
-        # TODO Can include "perfect" crystal, otherwise define variations. index=0 as arg from Dataset
-        peak_shapes = [(0.05, -0.06, 0.07), (0.05, -0.01, 0.01),
-                       (0.0, 0.0, 0.01), (0.0, 0.0, random.uniform(0.001, 0.1))]
-
-        peak_shape = random.choice(self.peak_shapes)
-        U, V, W = peak_shapes[peak_shape]
-
-        H = np.zeros((xy_merge.shape[0], 1))
-        H[:, 0] = (U * (np.tan(xy_merge[:, 0] * (np.pi/180)/2)) ** 2 + V *
-                   np.tan(xy_merge[:, 0] * (np.pi/180)/2) + W) ** (1/2)
-
-        pattern = []
-        for x_val in range(0, int(180 / self.x_step)):
-            y_val = 0
-            for xy_idx in range(0, xy_merge.shape[0]):
-                angle = xy_merge[xy_idx, 0]
-                inten = xy_merge[xy_idx, 1]
-                if (x_val * self.x_step - 5) < angle < (x_val * self.x_step + 5):
-                    const_g = 4 * np.log(2)
-                    value = ((const_g ** (1/2)) /
-                             (np.pi ** (1/2) * H[xy_idx, 0])) * np.exp(-const_g * ((x_val * self.x_step - angle) /
-                                                                                   H[xy_idx, 0])**2)
-                    y_val = y_val + inten * (value * 1.5)
-            pattern.append(y_val)
-
-        x = torch.as_tensor(pattern)
-
-        if self.noise and peak_shape != 2:  # Peak shape 2 represents a perfect crystal, so should not be augmented
-            x = torch.relu(torch.normal(mean=x, std=20))
-
-        return x
+ml(task='NPCNN')

@@ -3,7 +3,7 @@
 **Welcome to the repo for classifying crystal structures & space groups from 1D X-ray diffraction (XRD) patterns.**
 
 *Can machine learning identify crystals in light diffraction patterns?* </br>
-**[Check out our paper for more details and information]()**, and be sure to cite us.
+**[Check out our paper for more details and information](https://www.researchgate.net/publication/370624389_Automated_Classification_of_Big_X-ray_Diffraction_Data_Using_Deep_Learning_Models)**, and be sure to cite us.
  
 ---
 
@@ -13,7 +13,7 @@ Paper:
 @article{Crystals,
 title   = {Automated Classification of Big X-ray Data Using Deep Learning Models},
 author  = {Jerardo Salgado; Sam Lerman; Zhaotong Du; Chenliang Xu; and Niaz Abdolrahim},
-journal = {Under Review at npj Computational Materials},
+journal = {npj Computational Materials},
 year    = {2023}
 }
 ```
@@ -88,7 +88,7 @@ If you find this work useful, be sure to cite us:
 @article{Crystals,
 title   = {Automated Classification of Big X-ray Data Using Deep Learning Models},
 author  = {Jerardo Salgado; Sam Lerman; Zhaotong Du; Chenliang Xu; and Niaz Abdolrahim},
-journal = {Under Review at npj Computational Materials},
+journal = {npj Computational Materials},
 year    = {2023}
 }
 ```

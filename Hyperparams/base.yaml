@@ -1,8 +1,7 @@
-imports:
-  - classify/custom  # Classification: UnifiedML/Hyperparams/task/classify/custom
-  - self
+task: classify
 
 Dataset: XRD.XRD
+train_steps: 5e5
 
 num_classes: 7
 icsd: true
