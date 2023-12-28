@@ -1,0 +1,8 @@
+imports:
+  - base
+  - self
+
+Eyes: XRD.NoPoolCNN
+Predictor: XRD.Predictor
+
+experiment: NPCNN

@@ -1,0 +1,8 @@
+imports:
+  - base
+  - self
+
+Eyes: XRD.CNN
+Predictor: XRD.Predictor
+
+experiment: SCNN
