@@ -96,7 +96,10 @@ year    = {2023}
 ---
 
 <a href="http://www.github.com/AGI-init/UnifiedML" target="_blank">
-<img width="15%" alt="flowchart" src="https://i.imgur.com/Ya9FpIJ.png">
+<picture>
+  <source width="15%" media="(prefers-color-scheme: dark)" srcset="https://github.com/AGI-init/UnifiedML/assets/92597756/7fb01de3-3539-4b7e-b51e-910d781e47a8">
+  <img width="15%" alt="Text changing depending on mode. Light: 'Light' Dark: 'Dark'" src="https://i.imgur.com/Ya9FpIJ.png">
+</picture>
 </a>
 
 All **[UnifiedML](https://github.com/AGI-init/UnifiedML)** features and syntax are supported.
