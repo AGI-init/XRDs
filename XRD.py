@@ -9,8 +9,7 @@ import numpy as np
 from torch import nn
 from torch.utils.data import Dataset
 
-from ML import ml
-from ML.World.Dataset import Lock
+from ML import ML
 
 
 class NoPoolCNN(nn.Module):
@@ -150,6 +149,7 @@ def data_paths(icsd, open_access, rruff, soup, train):
         if os.path.exists(path + '/Data/Generated/XRDs_ICSD/') or os.path.exists(path + '/Data/Generated/CIFs_ICSD/'):
             if len(glob.glob(path + '/Data/Generated/XRDs_ICSD/*.npy')) < 171e3 * 7:  # Approximate length check
                 from Data.CIF import generate
+                from ML.World.Dataset import Lock
                 with Lock(path + '/Data/Generated/CIFs_ICSD/Lock'):  # System-wide lock
                     generate(path + '/Data/Generated/CIFs_ICSD/')  # Generate data
             roots.append(glob.glob(path + '/Data/Generated/XRDs_ICSD/*.npy'))
@@ -160,6 +160,7 @@ def data_paths(icsd, open_access, rruff, soup, train):
 
     if (open_access or not icsd) and (train or not rruff):
         if len(glob.glob(path + '/Data/Generated/XRDs_open_access/*.npy')) < 7e3 * 7:  # Approximate length check
+            from ML.World.Dataset import Lock
             with Lock(path + '/Data/Generated/CIFs_open_access/Lock'):  # System-wide lock
                 from Data.CIF import generate, download
                 if len(glob.glob(path + '/Data/Generated/CIFs_open_access/*.cif')) < 8e3:  # Approximate length check
@@ -171,4 +172,4 @@ def data_paths(icsd, open_access, rruff, soup, train):
     return roots, train_eval_splits
 
 
-ml(task='NPCNN')
+ML(task='NPCNN')
